@@ -1,0 +1,112 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+/*
+1. Create request in
+https://issues.sonatype.org/secure/CreateIssue.jspa?issuetype=21&pid=10134
+2. Close and Release in
+https://oss.sonatype.org/#stagingRepositories
+3. Or Snapshot
+https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~org/dreamcat/
+ */
+def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+def isReleaseVersion = !version.endsWith("SNAPSHOT")
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(Sign) {
+    onlyIf { isReleaseVersion }
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier.set 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    archiveClassifier.set 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name LICENCE_NAME
+            url LICENCE_URL
+            distribution LICENCE_DIST
+        }
+    }
+    developers {
+        developer {
+            id DEVELOPER_ID
+            name DEVELOPER_NAME
+            email DEVELOPER_EMAIL
+        }
+    }
+    scm {
+        url PROJECT_URL
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // components.web for war
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', project.name)
+                root.appendNode('url', PROJECT_URL)
+                root.appendNode('description', PROJECT_DESCRIPTION)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+    repositories {
+        maven {
+            url isReleaseVersion ? releasesRepoUrl : snapshotsRepoUrl
+            credentials {
+                username project.findProperty("oss.username") as String
+                password project.findProperty("oss.password") as String
+            }
+        }
+    }
+}
+
+signing {
+    required { isReleaseVersion && gradle.taskGraph.hasTask("publish") }
+    sign publishing.publications.mavenJava
+}
+
+javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}

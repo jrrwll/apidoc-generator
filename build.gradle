@@ -1,0 +1,63 @@
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+}
+
+apply plugin: 'java-library'
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+version = VERSION
+group = GROUP_ID
+
+ext {
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    slf4jVersion = "1.7.36"
+    // https://mvnrepository.com/artifact/org.projectlombok/lombok
+    lombokVersion = "1.18.22"
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    junitVersion = "5.8.2"
+    // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
+    javaparserVersion = '3.24.0'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    jacksonVersion = '2.13.1'
+}
+
+dependencies {
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation "org.slf4j:slf4j-simple:$slf4jVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+
+    // or gradle.properties: org.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk/Contents/Home
+    // implementation files(Jvm.current().toolsJar)
+
+    implementation "com.github.javaparser:javaparser-core:$javaparserVersion"
+    implementation "com.github.javaparser:javaparser-symbol-solver-core:$javaparserVersion"
+    implementation 'org.dreamcat:databind-core:0.1-SNAPSHOT'
+    implementation 'org.dreamcat:databind-json:0.1-SNAPSHOT'
+    implementation 'org.dreamcat:common-core:0.1-SNAPSHOT'
+    implementation 'org.dreamcat:common-x:0.1-SNAPSHOT'
+    implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+
+    // https://mvnrepository.com/artifact/org.springframework/spring-web
+    testImplementation 'org.springframework:spring-web:5+'
+}
+
+apply from: "./publish.gradle"
+
+task printVersion {
+    doLast {
+        print version
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -34,14 +34,14 @@ public class FieldCommentProvider implements Function<Field, String> {
         if (classDef != null) {
             classCache.putIfAbsent(declaringClass, classDef);
         } else {
-            log.warn("class {} is not found in source dirs {}", declaringClass, srcDirs);
+            log.warn("{} is not found in source dirs {}", declaringClass, srcDirs);
             return null;
         }
 
         CommentFieldDef fieldDef = classDef.getFields().stream()
                 .filter(it -> it.getName().equals(field.getName())).findAny().orElse(null);
         if (fieldDef == null) {
-            log.warn("field {} is not found in source dirs {}", field, srcDirs);
+            log.warn("{} is not found in source dirs {}", field, srcDirs);
             return null;
         }
         return fieldDef.getComment();
@@ -52,7 +52,9 @@ public class FieldCommentProvider implements Function<Field, String> {
         char sep = File.separatorChar;
         for (String srcDir : srcDirs) {
             while (belongBasePackages(current)) {
-                File file = new File(srcDir, current.replace('.', sep) + ".java");
+                int dollar = current.lastIndexOf('$');
+                String name = dollar == -1 ? current : current.substring(0, dollar);
+                File file = new File(srcDir, name.replace('.', sep) + ".java");
                 if (file.exists()) {
                     return CommentJavaParser.parseOne(file, srcDirs, className);
                 }

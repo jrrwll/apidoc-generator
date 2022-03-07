@@ -21,7 +21,6 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
 import org.dreamcat.databind.type.ObjectMethod;
 import org.dreamcat.databind.type.ObjectParameter;
 import org.dreamcat.databind.type.ObjectType;
@@ -45,7 +44,6 @@ public class ApiDocParser {
     public ApiDoc parse() throws Exception {
         List<String> javaFileDirs = config.getJavaFileDirs();
         List<String> srcDirs = config.getSrcDirs();
-        log.warn("config: {}", JsonUtil.toJson(config));
 
         if (config.isUseRelativeJavaFilePath()) {
             javaFileDirs = PathUtil.crossJoin(srcDirs, javaFileDirs);

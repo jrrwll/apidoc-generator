@@ -35,7 +35,7 @@ public class Swagger {
     Map<String, SwaggerSchema> defNameSchemaCache = new HashMap<>();
 
     public String toYaml() {
-        return YamlUtil.toYaml(this);
+        return YamlUtil.toJson(this);
     }
 
     @Data

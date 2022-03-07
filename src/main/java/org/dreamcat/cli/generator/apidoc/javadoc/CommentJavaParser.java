@@ -4,10 +4,15 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
@@ -15,19 +20,22 @@ import java.util.stream.Collectors;
  */
 public class CommentJavaParser {
 
+    private CommentJavaParser() {
+    }
+
     public static CommentClassDef parseOne(String javaFilePath, List<String> srcDirs, String className) {
         return parseOne(new File(javaFilePath), srcDirs, className);
     }
 
     public static CommentClassDef parseOne(File javaFilePath, List<String> srcDirs, String className) {
-        CommentClassDef classDef = parse(javaFilePath, srcDirs).stream()
-                .filter(it -> it.getType().equals(className))
-                .findAny().orElse(null);
-        if (classDef == null) {
-            throw new IllegalArgumentException("no class " + className +
-                    " defined in file " + javaFilePath.getAbsolutePath());
+        List<CommentClassDef> defs = parse(javaFilePath, srcDirs);
+        for (CommentClassDef def : defs) {
+            if (def.getType().equals(className.replace('$', '.'))) {
+                return def;
+            }
         }
-        return classDef;
+        throw new IllegalArgumentException("no class " + className +
+                " defined in file " + javaFilePath.getAbsolutePath());
     }
 
     public static List<CommentClassDef> parse(String javaFilePath, List<String> srcDirs) {
@@ -53,13 +61,23 @@ public class CommentJavaParser {
             throw new RuntimeException(msg);
         }
 
-        return compilationUnit.getTypes().stream().map(CommentClassDef::new)
-                .collect(Collectors.toList());
+        List<CommentClassDef> defs = new ArrayList<>();
+        for (TypeDeclaration<?> type : compilationUnit.getTypes()) {
+            recurseParse(type, defs);
+        }
+        return defs;
     }
 
-    private static String getSimpleName(String javaFilePath) {
-        int ps = javaFilePath.lastIndexOf(File.pathSeparator);
-        int ds = javaFilePath.lastIndexOf('.');
-        return javaFilePath.substring(ps + 1, ds);
+    private static void recurseParse(TypeDeclaration<?> type, List<CommentClassDef> defs) {
+        defs.add(new CommentClassDef(type));
+        NodeList<BodyDeclaration<?>> members = type.getMembers();
+        if (ObjectUtil.isEmpty(members)) return;
+
+        for (BodyDeclaration<?> member : members) {
+            if (member.isClassOrInterfaceDeclaration()) {
+                TypeDeclaration<?> subType = member.asClassOrInterfaceDeclaration();
+                recurseParse(subType, defs);
+            }
+        }
     }
 }

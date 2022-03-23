@@ -1,7 +1,7 @@
-package org.dreamcat.cli.generator.apidoc.renderer;
+package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -12,23 +12,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import lombok.Setter;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger;
+import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerDefinition;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerMethod;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerParameter;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerParameter.In;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerPath;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerResponse;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerSchema;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerType;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
-import org.dreamcat.common.io.FileUtil;
+import org.dreamcat.common.util.ByteUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
 import org.dreamcat.common.util.ReflectUtil;
@@ -39,24 +32,23 @@ import org.dreamcat.databind.type.ObjectType;
  * @version 2022-01-04
  */
 @Setter
-public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
+public class SwaggerRenderer implements ApiDocRenderer {
 
-    private String defaultTitle = "Default Title";
-    private String defaultVersion = "1.0.0";
+    private String defaultTitle = "";
+    private String defaultVersion = "";
     private String fieldNameAnnotation;
     private List<String> fieldNameAnnotationName;
     private Function<Field, String> fieldNameGetter;
-
-    public File renderAndSave(ApiDoc apiDoc, String outputPath) throws IOException {
-        String doc = render(apiDoc).toYaml();
-
-        File file = Companion.getOutputPath(outputPath, "yaml");
-        FileUtil.writeFrom(file, doc);
-        return file;
-    }
+    private ClassLoader classLoader;
 
     @Override
-    public Swagger render(ApiDoc apiDoc) {
+    public void render(ApiDoc apiDoc, Writer out) throws IOException {
+        Swagger swagger = renderSwagger(apiDoc);
+        String s = swagger.toYaml();
+        out.write(s);
+    }
+
+    private Swagger renderSwagger(ApiDoc apiDoc) {
         afterPropertySet();
         Swagger swagger = new Swagger();
 
@@ -66,8 +58,8 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
         swagger.setTags(tags);
 
         swagger.setPaths(new HashMap<>());
-        Map<String, ApiGroup> groups = apiDoc.getGroups();
-        for (ApiGroup group : groups.values()) {
+        List<ApiGroup> groups = apiDoc.getGroups();
+        for (ApiGroup group : groups) {
             String tagName = group.getName();
 
             Tag tag = new Tag();
@@ -75,8 +67,8 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
             tag.setDescription(group.getComment());
             tags.add(tag);
 
-            Map<String, ApiFunction> functions = group.getFunctions();
-            for (ApiFunction function : functions.values()) {
+            List<ApiFunction> functions = group.getFunctions();
+            for (ApiFunction function : functions) {
                 renderFunction(function, tagName, swagger);
             }
         }
@@ -116,7 +108,7 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
             Map<SwaggerMethod, SwaggerPath> swaggerPathMap = swaggerPaths.computeIfAbsent(
                     path, it -> new HashMap<>());
             for (String action : actions) {
-                SwaggerPath swaggerPath = formatFunction(function, tagName, action, swagger);
+                SwaggerPath swaggerPath = formatFunction(function, tagName, action, path, swagger);
                 swaggerPathMap.put(SwaggerMethod.valueOf(action.toLowerCase()), swaggerPath);
             }
         }
@@ -124,11 +116,13 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
     }
 
     private SwaggerPath formatFunction(ApiFunction function, String tagName,
-            String action, Swagger swagger) {
+            String action, String path, Swagger swagger) {
         SwaggerPath swaggerPath = new SwaggerPath();
         swaggerPath.setTags(Collections.singletonList(tagName));
         swaggerPath.setDescription(function.getComment());
-        swaggerPath.setOperationId(action + "_" + function.getName());
+
+        String operationId = formatOperationId(function, action, path);
+        swaggerPath.setOperationId(operationId);
         swaggerPath.setConsumes(function.getConsumes());
         swaggerPath.setProduces(function.getProduces());
 
@@ -144,6 +138,13 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
         swaggerPath.setResponses(Collections.singletonMap("200", response));
 
         return swaggerPath;
+    }
+
+    private String formatOperationId(ApiFunction function, String action, String path) {
+        if (ObjectUtil.isBlank(path)) {
+            return action + "_" + function.getName();
+        }
+        return action + "_" + function.getName() + "_" + ByteUtil.hex(path.getBytes());
     }
 
     private SwaggerParameter formatParameter(
@@ -228,7 +229,14 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
     }
 
     private String fieldNameAnnotationName(Field field) {
-        Class<? extends Annotation> annType = ReflectUtil.forName(fieldNameAnnotation);
+        Class<? extends Annotation> annType;
+        if (classLoader == null) {
+            annType = ReflectUtil.forName(
+                    fieldNameAnnotation);
+        } else {
+            annType = ReflectUtil.forName(
+                    fieldNameAnnotation, true, classLoader);
+        }
         Object ann = field.getDeclaredAnnotation(annType);
         if (ann != null) {
             for (String methodName : fieldNameAnnotationName) {
@@ -243,6 +251,6 @@ public class SwaggerRenderer implements ApiDocRenderer<Swagger> {
 
     public void useJacksonFieldNameGetter() {
         this.fieldNameAnnotation = "com.fasterxml.jackson.annotation.JsonProperty";
-        this.fieldNameAnnotationName = Collections.singletonList("name");
+        this.fieldNameAnnotationName = Collections.singletonList("value");
     }
 }

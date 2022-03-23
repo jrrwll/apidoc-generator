@@ -1,7 +1,7 @@
 package org.dreamcat.cli.generator.apidoc.scheme;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -13,5 +13,5 @@ public class ApiGroup {
 
     private String comment;
     private String name;
-    private Map<String, ApiFunction> functions = new LinkedHashMap<>();
+    private List<ApiFunction> functions = new ArrayList<>();
 }

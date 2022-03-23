@@ -11,4 +11,5 @@ import org.dreamcat.databind.type.ObjectType;
 public class ApiOutputParam {
 
     private ObjectType type;
+    private String jsonWithComment;
 }

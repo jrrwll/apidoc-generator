@@ -1,0 +1,17 @@
+plugins {
+    id 'org.dreamcat.apidoc-generator' version '0.3'
+}
+
+def gradleRepo = "${System.getenv('HOME')}/.gradle/caches/modules-2/files-2.1"
+
+apidocGenerate {
+    classDirs = [
+            '../../build/classes/java/test',
+    ]
+    jarDirs = [
+            "$gradleRepo/org.springframework/spring-web/5.3.17",
+            "$gradleRepo/org.springframework/spring-core/5.3.17"
+    ]
+    srcDirs = ['../../src/test/java']
+    javaFileDirs = ['com/example/controller']
+}

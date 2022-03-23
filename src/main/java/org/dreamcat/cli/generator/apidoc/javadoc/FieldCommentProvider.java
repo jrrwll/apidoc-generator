@@ -25,7 +25,7 @@ public class FieldCommentProvider implements Function<Field, String> {
     @Override
     public String apply(Field field) {
         Class<?> declaringClass = field.getDeclaringClass();
-        if (!belongBasePackages(declaringClass.getPackage().getName())) return null;
+        if (!belongBasePackages(getPackageName(declaringClass))) return null;
 
         CommentClassDef classDef = classCache.get(declaringClass);
         if (classDef == null) {
@@ -69,5 +69,15 @@ public class FieldCommentProvider implements Function<Field, String> {
             if (name.startsWith(basePackage)) return true;
         }
         return false;
+    }
+
+    private String getPackageName(Class<?> clazz) {
+        String name = clazz.getName();
+        int i = name.lastIndexOf('.');
+        if (i != -1) {
+            return name.substring(0, i);
+        } else {
+            return ""; // not null
+        }
     }
 }

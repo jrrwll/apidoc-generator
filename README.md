@@ -1,1 +1,20 @@
-> see [more](https://jrrwll.github.io/blog/2020/12/17/apidoc-generator-api%E6%96%87%E6%A1%A3%E7%94%9F%E6%88%90%E5%99%A8%E7%AE%80%E4%BB%8B/) on my [Blog](https://jrrwll.github.io/)
+> see [more](https://jrrwll.github.io/docs/tool/apidoc-generator/) on my [Blog](https://jrrwll.github.io/)
+
+### ops log
+
+```shell
+# create a maven-plugin project
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=apidoc-generator-maven-plugin \
+    -DarchetypeArtifactId=maven-archetype-mojo \
+    -DinteractiveMode=false
+
+# use the plugin
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=plugin-maven-example \
+    -DinteractiveMode=false
+
+mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
+```

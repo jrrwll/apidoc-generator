@@ -1,18 +1,21 @@
-package org.dreamcat.cli.generator.apidoc.parser;
+package org.dreamcat.cli.generator.apidoc;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
+import org.dreamcat.cli.generator.apidoc.javadoc.FieldCommentProvider;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
@@ -21,6 +24,8 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
+import org.dreamcat.databind.instance.RandomInstance;
+import org.dreamcat.databind.json.legacy.JSONWithComment;
 import org.dreamcat.databind.type.ObjectMethod;
 import org.dreamcat.databind.type.ObjectParameter;
 import org.dreamcat.databind.type.ObjectType;
@@ -31,17 +36,30 @@ import org.dreamcat.databind.type.TypeUtil;
  * @version 2021-12-09
  */
 @Slf4j
-public class ApiDocParser {
+class ApiDocParser {
 
     private final ApiDocConfig config;
+    private final ClassLoader classLoader;
+    private final FieldCommentProvider fieldCommentProvider;
+    private final RandomInstance randomInstance;
 
     public ApiDocParser(ApiDocConfig config) {
-        Objects.requireNonNull(config);
-        config.check();
-        this.config = config;
+        this(config, null, new RandomInstance());
     }
 
-    public ApiDoc parse() throws Exception {
+    public ApiDocParser(ApiDocConfig config, ClassLoader classLoader, RandomInstance randomInstance) {
+        Objects.requireNonNull(config);
+        config.afterPropertySet(classLoader);
+        ObjectUtil.requireNotNull(randomInstance, "randomInstance");
+
+        this.config = config;
+        this.classLoader = classLoader;
+        this.fieldCommentProvider = new FieldCommentProvider(
+                config.getSrcDirs(), config.getBasePackages());
+        this.randomInstance = randomInstance;
+    }
+
+    public ApiDoc parse() {
         List<String> javaFileDirs = config.getJavaFileDirs();
         List<String> srcDirs = config.getSrcDirs();
 
@@ -50,6 +68,7 @@ public class ApiDocParser {
         }
 
         ApiDoc apiDoc = new ApiDoc();
+        Map<String, ApiGroup> groupMap = new LinkedHashMap<>();
         for (String javaFileDir : javaFileDirs) {
             File dir = new File(javaFileDir);
             File[] files;
@@ -70,17 +89,18 @@ public class ApiDocParser {
                                     classDefs.size() + " class in " + file.getAbsolutePath());
                 }
                 CommentClassDef classDef = classDefs.get(0);
-                parseClass(classDef, apiDoc);
+                parseClass(classDef, groupMap);
             }
         }
+        apiDoc.setGroups(new ArrayList<>(groupMap.values()));
         return apiDoc;
     }
 
-    protected void parseClass(CommentClassDef classDef, ApiDoc apiDoc) throws Exception {
+    protected void parseClass(CommentClassDef classDef, Map<String, ApiGroup> groupMap) {
         String type = classDef.getType();
-        Class<?> serviceType = Class.forName(type);
+        Class<?> serviceType = ReflectUtil.forName(type, true, classLoader);
 
-        ApiGroup apiGroup = apiDoc.getGroups().computeIfAbsent(type, it -> new ApiGroup());
+        ApiGroup apiGroup = groupMap.computeIfAbsent(type, it -> new ApiGroup());
         apiGroup.setName(type);
         apiGroup.setComment(classDef.getComment());
 
@@ -88,7 +108,7 @@ public class ApiDocParser {
             ApiFunction apiFunction = parseMethod(methodDef, serviceType);
             if (apiFunction == null) continue;
 
-            apiGroup.getFunctions().put(methodDef.getName(), apiFunction);
+            apiGroup.getFunctions().add(apiFunction);
         }
     }
 
@@ -108,6 +128,10 @@ public class ApiDocParser {
         ObjectType returnType = objectMethod.getReturnType();
         ApiOutputParam outputParam = new ApiOutputParam();
         outputParam.setType(returnType);
+        if (config.isJsonWithComment()) {
+            ObjectType type = outputParam.getType();
+            outputParam.setJsonWithComment(toJSONWithComment(type));
+        }
         apiFunction.setOutputParam(outputParam);
 
         List<CommentParameterDef> parameters = methodDef.getParameters();
@@ -176,6 +200,10 @@ public class ApiDocParser {
         apiParam.setType(objectParameter.getType());
         apiParam.setName(parameter.getName());
         apiParam.setComment(parameter.getComment());
+        if (config.isJsonWithComment()) {
+            ObjectType type = apiParam.getType();
+            apiParam.setJsonWithComment(toJSONWithComment(type));
+        }
 
         // http-like part
         if (config.getHttp() != null) {
@@ -205,4 +233,8 @@ public class ApiDocParser {
         return null;
     }
 
+    private String toJSONWithComment(ObjectType type) {
+        Object bean = randomInstance.randomValue(type);
+        return JSONWithComment.stringify(bean, fieldCommentProvider);
+    }
 }

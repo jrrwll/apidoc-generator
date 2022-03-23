@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ComplexController {
 
     // get complex
-    @RequestMapping(path = "/get", method = RequestMethod.GET)
+    @RequestMapping(path = {"/get", "/info"}, method = RequestMethod.GET)
     public ApiResult<ComplexModel> get(@RequestParam("id") String id) {
         return null;
     }
@@ -45,7 +45,7 @@ public class ComplexController {
     }
 
     // update complex
-    @RequestMapping(path = "/update", method = {RequestMethod.POST, RequestMethod.PUT})
+    @RequestMapping(path = {"/update", "edit"}, method = {RequestMethod.POST, RequestMethod.PUT})
     public ApiResult<String> update(
             @RequestBody ComplexCreateParam param) {
         return null;

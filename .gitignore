@@ -8,6 +8,7 @@
 out
 .gradle
 build
+target
 .DS_Store
 generated
 generated_tests

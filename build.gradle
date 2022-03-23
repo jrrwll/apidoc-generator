@@ -42,16 +42,19 @@ dependencies {
     implementation "com.github.javaparser:javaparser-symbol-solver-core:$javaparserVersion"
     implementation 'org.dreamcat:databind-core:0.2'
     implementation 'org.dreamcat:databind-json:0.2'
-    implementation 'org.dreamcat:common-core:0.2'
+    implementation 'org.dreamcat:common-core:0.2.1'
     implementation 'org.dreamcat:common-x:0.2'
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    // // https://mvnrepository.com/artifact/org.freemarker/freemarker
+    implementation 'org.freemarker:freemarker:2.3.31'
 
     // https://mvnrepository.com/artifact/org.springframework/spring-web
     testImplementation 'org.springframework:spring-web:5+'
 }
 
 apply from: "./publish.gradle"
+apply from: "./tasks.gradle"
 
 task printVersion {
     doLast {

@@ -16,6 +16,8 @@ public class ApiInputParam {
     private String name;
     private String comment;
     private ObjectType type;
+    private String jsonWithComment;
+
     // http-like part
     private Boolean required; // required request param or not
     private String pathVar; // variable name in url path

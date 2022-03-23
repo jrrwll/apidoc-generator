@@ -5,8 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.renderer.SwaggerRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -33,9 +32,8 @@ class SwaggerTest {
 
         SwaggerRenderer renderer = new SwaggerRenderer();
 
-        ApiDocGenerator<Swagger> generator = new ApiDocGenerator<>(config, renderer);
-        Swagger swagger = generator.generate();
-        String doc = swagger.toYaml();
+        ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
+        String doc = generator.generate();
         System.out.println(doc);
     }
 

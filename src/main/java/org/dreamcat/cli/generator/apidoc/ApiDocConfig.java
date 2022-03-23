@@ -2,6 +2,7 @@ package org.dreamcat.cli.generator.apidoc;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -18,30 +19,31 @@ import org.dreamcat.common.util.ReflectUtil;
 public class ApiDocConfig {
 
     // parser
-    private List<String> basePackages; // java files dirs
+    private List<String> basePackages = Collections.singletonList(""); // java files dirs
     private List<String> srcDirs; // source dir
     private List<String> javaFileDirs; // service class dir
     private boolean useRelativeJavaFilePath; // cross join srcDirs & javaFileDirs or not
     private Set<String> ignoreInputParamTypes; // ignore input params
+    private boolean jsonWithComment; //
 
     private boolean enableSpringWeb; // parse spring annotations or not
     private Http http; // http annotations
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
-    public void check() {
+    public void afterPropertySet(ClassLoader classLoader) {
         ObjectUtil.requireNotEmpty(basePackages, "basePackages");
         ObjectUtil.requireNotEmpty(srcDirs, "srcDirs");
         ObjectUtil.requireNotEmpty(javaFileDirs, "javaFileDirs");
+
+        if (enableSpringWeb && http == null) {
+            http = springHttp(classLoader);
+        }
     }
 
     public boolean ignoreInputParamType(String type) {
         return ObjectUtil.isNotEmpty(ignoreInputParamTypes) &&
                 ignoreInputParamTypes.contains(type);
-    }
-
-    public Http getHttp() {
-        return enableSpringWeb ? springHttp() : http;
     }
 
     /**
@@ -66,20 +68,20 @@ public class ApiDocConfig {
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
-    private Http springHttp() {
+    private Http springHttp(ClassLoader classLoader) {
         Http h = new Http();
-        h.setPath(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping"));
-        h.setPathGetter(this::requestMappingPath);
-        h.setAction(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping"));
-        h.setActionGetter(this::requestMappingMethod);
-        h.setRequired(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestParam"));
-        h.setRequiredGetter(this::requestParamRequired);
-        h.setPathVar(ReflectUtil.forName("org.springframework.web.bind.annotation.PathVariable"));
-        h.setPathVarGetter(this::pathVariablePathVar);
+        h.setPath(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", true, classLoader));
+        h.setPathGetter(ApiDocConfig::requestMappingPath);
+        h.setAction(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", true, classLoader));
+        h.setActionGetter(ApiDocConfig::requestMappingMethod);
+        h.setRequired(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestParam", true, classLoader));
+        h.setRequiredGetter(ApiDocConfig::requestParamRequired);
+        h.setPathVar(ReflectUtil.forName("org.springframework.web.bind.annotation.PathVariable", true, classLoader));
+        h.setPathVarGetter(ApiDocConfig::pathVariablePathVar);
         return h;
     }
 
-    private List<String> requestMappingPath(Annotation annotation) {
+    private static List<String> requestMappingPath(Annotation annotation) {
         String[] paths = (String[]) ReflectUtil.invoke(annotation, "path");
         if (ObjectUtil.isEmpty(paths)) {
             paths = (String[]) ReflectUtil.invoke(annotation, "value");
@@ -87,7 +89,7 @@ public class ApiDocConfig {
         return ObjectUtil.isEmpty(paths) ? null : Arrays.asList(paths);
     }
 
-    private List<String> requestMappingMethod(Annotation annotation) {
+    private static List<String> requestMappingMethod(Annotation annotation) {
         // org.springframework.web.bind.annotation.RequestMethod
         Enum<?>[] methods = (Enum<?>[]) ReflectUtil.invoke(annotation, "method");
         if (ObjectUtil.isEmpty(methods)) return null;
@@ -95,11 +97,11 @@ public class ApiDocConfig {
                 .collect(Collectors.toList());
     }
 
-    private Boolean requestParamRequired(Annotation annotation) {
+    private static Boolean requestParamRequired(Annotation annotation) {
         return (Boolean) ReflectUtil.invoke(annotation, "required");
     }
 
-    private String pathVariablePathVar(Annotation annotation) {
+    private static String pathVariablePathVar(Annotation annotation) {
         String name = (String) ReflectUtil.invoke(annotation, "name");
         if (name.isEmpty()) {
             name = (String) ReflectUtil.invoke(annotation, "value");

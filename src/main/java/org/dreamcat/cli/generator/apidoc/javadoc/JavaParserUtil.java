@@ -19,7 +19,7 @@ import org.dreamcat.common.util.StringUtil;
  * @author Jerry Will
  * @version 2021-12-09
  */
-public class JavaParserUtil {
+class JavaParserUtil {
 
     private JavaParserUtil() {
     }

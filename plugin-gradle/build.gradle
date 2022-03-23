@@ -1,0 +1,67 @@
+plugins {
+    id 'java'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+    id 'com.gradle.plugin-publish' version '0.20.0'
+}
+
+version VERSION
+group GROUP_ID
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+ext {
+    // https://mvnrepository.com/artifact/org.projectlombok/lombok
+    lombokVersion = "1.18.22"
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    junitVersion = "5.8.2"
+}
+
+// def props = new Properties()
+// file("../gradle.properties").withInputStream { props.load(it) }
+//
+// version props.getProperty('VERSION')
+// group props.getProperty('GROUP_ID')
+
+dependencies {
+    implementation gradleApi()
+
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+
+    implementation 'org.dreamcat:common-core:0.2.1'
+    implementation 'org.dreamcat:common-x:0.2'
+    implementation 'org.dreamcat:apidoc-generator:0.3'
+}
+
+// apply from: "../publish.gradle"
+
+test {
+    useJUnitPlatform()
+}
+
+// https://plugins.gradle.org/docs/publish-plugin
+
+gradlePlugin {
+    plugins {
+        apidocGenerate {
+            id = 'org.dreamcat.apidoc-generator'
+            implementationClass = 'org.dreamcat.cli.generator.apidoc.ApiDocGeneratorPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/jrrwll/apidoc-generator'
+    vcsUrl = 'https://github.com/jrrwll/apidoc-generator'
+    description = 'gradle plugin for API doc generator'
+
+    plugins {
+        apidocGenerate {
+            displayName = 'APIDoc Generator plugin'
+            description = 'generate API doc'
+            tags = ['apidoc', 'generator']
+        }
+    }
+}

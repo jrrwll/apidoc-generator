@@ -1,8 +1,8 @@
 plugins {
     id 'java'
     id 'java-gradle-plugin'
-    id 'maven-publish'
-    id 'com.gradle.plugin-publish' version '0.20.0'
+    // id 'maven-publish'
+    // id 'com.gradle.plugin-publish' version '0.20.0'
 }
 
 version VERSION
@@ -15,12 +15,6 @@ ext {
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     junitVersion = "5.8.2"
 }
-
-// def props = new Properties()
-// file("../gradle.properties").withInputStream { props.load(it) }
-//
-// version props.getProperty('VERSION')
-// group props.getProperty('GROUP_ID')
 
 dependencies {
     implementation gradleApi()
@@ -35,15 +29,10 @@ dependencies {
     implementation 'org.dreamcat:apidoc-generator:0.3'
 }
 
-// apply from: "../publish.gradle"
-
-test {
-    useJUnitPlatform()
-}
-
 // https://plugins.gradle.org/docs/publish-plugin
 
 gradlePlugin {
+    automatedPublishing = false
     plugins {
         apidocGenerate {
             id = 'org.dreamcat.apidoc-generator'
@@ -52,16 +41,22 @@ gradlePlugin {
     }
 }
 
-pluginBundle {
-    website = 'https://github.com/jrrwll/apidoc-generator'
-    vcsUrl = 'https://github.com/jrrwll/apidoc-generator'
-    description = 'gradle plugin for API doc generator'
+// pluginBundle {
+//     website = 'https://github.com/jrrwll/apidoc-generator'
+//     vcsUrl = 'https://github.com/jrrwll/apidoc-generator'
+//     description = 'gradle plugin for API doc generator'
+//
+//     plugins {
+//         apidocGenerate {
+//             displayName = 'APIDoc Generator plugin'
+//             description = 'generate API doc'
+//             tags = ['apidoc', 'generator']
+//         }
+//     }
+// }
 
-    plugins {
-        apidocGenerate {
-            displayName = 'APIDoc Generator plugin'
-            description = 'generate API doc'
-            tags = ['apidoc', 'generator']
-        }
-    }
+apply from: "../publish.gradle"
+
+test {
+    useJUnitPlatform()
 }

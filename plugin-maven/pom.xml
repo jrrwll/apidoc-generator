@@ -6,24 +6,54 @@
   <packaging>maven-plugin</packaging>
   <version>0.3</version>
   <name>apidoc-generator-maven-plugin</name>
-  <url>http://maven.apache.org</url>
+  <description>maven plugin for API doc generator</description>
+  <url>https://github.com/jrrwll/apidoc-generator</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>tuke</id>
+      <name>Jerry Will</name>
+      <email>jrriwll@gmial.com</email>
+    </developer>
+  </developers>
+  <scm>
+    <url>https://github.com/jrrwll/apidoc-generator.git</url>
+  </scm>
+
   <properties>
     <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-plugin-api -->
-    <maven-plugin-api.version>3.8.5</maven-plugin-api.version>
+    <versions.maven-plugin-api>3.8.5</versions.maven-plugin-api>
     <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-plugin-annotations -->
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-plugin-plugin -->
-    <maven-plugin.version>3.6.4</maven-plugin.version>
+    <versions.maven-plugin>3.6.4</versions.maven-plugin>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
+    <versions.maven-javadoc>3.3.2</versions.maven-javadoc>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
+    <versions.maven-source>3.2.1</versions.maven-source>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
+    <versions.maven-compiler>3.10.1</versions.maven-compiler>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
+    <versions.maven-gpg>3.0.1</versions.maven-gpg>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>${maven-plugin-api.version}</version>
+      <version>${versions.maven-plugin-api}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>${maven-plugin.version}</version>
+      <version>${versions.maven-plugin}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -57,19 +87,79 @@
 
   <build>
     <plugins>
+      <!-- maven plugin develop -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>${maven-plugin.version}</version>
+        <version>${versions.maven-plugin}</version>
       </plugin>
+      <!-- compiler-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>${versions.maven-compiler}</version>
         <configuration>
           <source>8</source>
           <target>8</target>
         </configuration>
       </plugin>
+      <!-- https://maven.apache.org/plugins/maven-source-plugin/usage.html -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${versions.maven-source}</version>
+        <executions>
+          <execution>
+            <id>attach-source</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- https://maven.apache.org/plugins/maven-javadoc-plugin/usage.html -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${versions.maven-javadoc}</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- https://maven.apache.org/plugins/maven-gpg-plugin/usage.html -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>${versions.maven-gpg}</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal><!-- mvn package -Dgpg.passphrase=$GPG_PASSPHRASE -->
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Release Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+  </distributionManagement>
 </project>

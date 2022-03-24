@@ -15,6 +15,20 @@ mvn archetype:generate \
     -DgroupId=org.dreamcat \
     -DartifactId=plugin-maven-example \
     -DinteractiveMode=false
+```
 
+```shell
 mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
+```
+
+or add shorthand to `~/.m2/settings.xml`
+
+```xml
+<pluginGroups>
+    <pluginGroup>org.dreamcat</pluginGroup>
+  </pluginGroups>
+```
+
+```shell
+mvn apidoc-generator:apidocGenerate
 ```

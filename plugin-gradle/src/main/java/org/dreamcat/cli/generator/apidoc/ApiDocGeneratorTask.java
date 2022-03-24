@@ -87,7 +87,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
         String outputPath = extension.getOutputPath().getOrNull();
         boolean rewrite = extension.getRewrite().get();
         if (outputPath == null) {
-            outputPath = "apidoc-" + RandomUtil.timeBaseRadix36W16() + suffix;
+            outputPath = "apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
         if (outputFile.exists() && !rewrite) {

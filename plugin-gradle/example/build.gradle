@@ -1,5 +1,16 @@
+// buildscript {
+//     repositories {
+//         mavenLocal()
+//         dependencies{
+//             classpath 'org.dreamcat:apidoc-generator-gradle-plugin:0.4'
+//         }
+//     }
+// }
+
+// apply plugin: 'org.dreamcat.apidoc-generator'
+
 plugins {
-    id 'org.dreamcat.apidoc-generator' version '0.3'
+    id 'org.dreamcat.apidoc-generator' version '0.4'
 }
 
 def gradleRepo = "${System.getenv('HOME')}/.gradle/caches/modules-2/files-2.1"
@@ -9,9 +20,10 @@ apidocGenerate {
             '../../build/classes/java/test',
     ]
     jarDirs = [
-            "$gradleRepo/org.springframework/spring-web/5.3.17",
-            "$gradleRepo/org.springframework/spring-core/5.3.17"
+            "$gradleRepo/org.springframework/spring-web/5.3.21",
+            "$gradleRepo/org.springframework/spring-core/5.3.21"
     ]
     srcDirs = ['../../src/test/java']
     javaFileDirs = ['com/example/controller']
+    enableMergeInputParam = true
 }

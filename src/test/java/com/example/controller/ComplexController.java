@@ -29,6 +29,13 @@ public class ComplexController {
         return null;
     }
 
+    @RequestMapping(path = {"/get/withVersion"}, method = {RequestMethod.GET, RequestMethod.POST})
+    public ApiResult<ComplexModel> getWithVersion(
+            @RequestParam(value = "id", required = true) String id,
+            @RequestParam(value = "version", required = false) Integer version) {
+        return null;
+    }
+
     // list complex
     @RequestMapping(path = "list", method = RequestMethod.GET)
     public ApiResult<ApiPageSummary<ComplexModel, ComplexSummaryModel>> list(
@@ -44,7 +51,12 @@ public class ComplexController {
         return null;
     }
 
-    // update complex
+    /**
+     * update complex
+     *
+     * @param param create param
+     * @return updated id
+     */
     @RequestMapping(path = {"/update", "edit"}, method = {RequestMethod.POST, RequestMethod.PUT})
     public ApiResult<String> update(
             @RequestBody ComplexCreateParam param) {

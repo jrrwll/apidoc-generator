@@ -5,9 +5,11 @@ repositories {
 }
 
 apply plugin: 'java-library'
+java.sourceCompatibility = JavaVersion.VERSION_1_8
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
-sourceCompatibility = JavaVersion.VERSION_1_8
+compileJava.options.compilerArgs.add '-parameters'
+compileTestJava.options.compilerArgs.add '-parameters'
 
 version = VERSION
 group = GROUP_ID
@@ -16,13 +18,13 @@ ext {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
     slf4jVersion = "1.7.36"
     // https://mvnrepository.com/artifact/org.projectlombok/lombok
-    lombokVersion = "1.18.22"
+    lombokVersion = "1.18.24"
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     junitVersion = "5.8.2"
     // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
     javaparserVersion = '3.24.0'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    jacksonVersion = '2.13.1'
+    jacksonVersion = '2.13.3'
 }
 
 dependencies {
@@ -42,7 +44,7 @@ dependencies {
     implementation "com.github.javaparser:javaparser-symbol-solver-core:$javaparserVersion"
     implementation 'org.dreamcat:databind-core:0.2'
     implementation 'org.dreamcat:databind-json:0.2'
-    implementation 'org.dreamcat:common-core:0.2.1'
+    implementation 'org.dreamcat:common-core:0.3'
     implementation 'org.dreamcat:common-x:0.2'
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
@@ -51,6 +53,7 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.springframework/spring-web
     testImplementation 'org.springframework:spring-web:5+'
+    testImplementation 'javax.validation:validation-api:2.0.1.Final'
 }
 
 apply from: "./publish.gradle"

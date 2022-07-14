@@ -11,20 +11,32 @@
   <properties>
     <mavenRepo>${env.HOME}/.m2/repository</mavenRepo>
   </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>5.3.21</version>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>
+        <!-- mvn apidoc-generator:apidocGenerate -->
         <groupId>org.dreamcat</groupId>
         <artifactId>apidoc-generator-maven-plugin</artifactId>
-        <version>0.3</version>
+        <version>0.4</version>
         <configuration>
           <classDirs>../../build/classes/java/test</classDirs>
           <jarDirs>
-            <jarDir>${mavenRepo}/org/springframework/spring-web/5.2.14.RELEASE</jarDir>
-            <jarDir>${mavenRepo}/org/springframework/spring-core/5.2.14.RELEASE</jarDir>
+            <jarDir>${mavenRepo}/org/springframework/spring-web/5.3.21</jarDir>
+            <jarDir>${mavenRepo}/org/springframework/spring-core/5.3.21</jarDir>
           </jarDirs>
           <srcDirs>../../src/test/java</srcDirs>
-          <javaFileDirs>com/example/controller</javaFileDirs>
+          <javaFileDirs>
+            <javaFileDir>com/example/controller</javaFileDir>
+            <javaFileDir>com/example/service</javaFileDir>
+          </javaFileDirs>
+          <enableMergeInputParam>true</enableMergeInputParam>
         </configuration>
       </plugin>
     </plugins>

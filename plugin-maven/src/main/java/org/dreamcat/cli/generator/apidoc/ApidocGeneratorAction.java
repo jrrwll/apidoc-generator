@@ -8,13 +8,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.apache.maven.plugin.logging.Log;
-import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.JsonWithComment;
+import org.dreamcat.cli.generator.apidoc.ApiDocConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Swagger;
+import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Text;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.jwc.JsonWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.IndentedTableRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.JsonWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.TextRenderer;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.util.ObjectUtil;
@@ -50,20 +54,26 @@ public class ApidocGeneratorAction implements Runnable {
         ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(classpath);
 
         ApiDocConfig config = buildApiDocConfig();
-        ApiDocRenderer renderer;
 
         Swagger swagger = mojo.getSwagger();
-        JsonWithComment jwc = mojo.getJsonWithComment();
+        Text text = mojo.getText();
         // swagger
         if (swagger != null && swagger.getEnabled()) {
-            renderer = swaggerRenderer(swagger);
+            ApiDocRenderer renderer = swaggerRenderer(swagger);
 
             output(config, renderer, userCodeClassLoader, ".yaml");
         }
         // jwc
-        if (jwc == null || jwc.getEnabled()) {
-            renderer = jsonWithCommentRenderer(jwc);
-            config.setJsonWithComment(true);
+        if (text == null || text.getEnabled()) {
+            TextRenderer renderer;
+            if (text != null && Objects.equals(text.getEnableIndentedTable(), true)) {
+                renderer = new IndentedTableRenderer();
+                config.setUseIndentedTable(true);
+            } else {
+                renderer = new JsonWithCommentRenderer();
+                config.setUseJsonWithComment(true);
+            }
+            fillTextRenderer(renderer, text);
 
             output(config, renderer, userCodeClassLoader, ".md");
         }
@@ -80,7 +90,8 @@ public class ApidocGeneratorAction implements Runnable {
         String outputPath = mojo.getOutputPath();
         boolean rewrite = mojo.getRewrite();
         if (outputPath == null) {
-            outputPath = "apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
+            String userDir = System.getProperty("user.dir");
+            outputPath = userDir + "/apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
         if (outputFile.exists() && !rewrite) {
@@ -114,21 +125,30 @@ public class ApidocGeneratorAction implements Runnable {
             config.setIgnoreInputParamTypes(new HashSet<>(Arrays.asList(
                     "org.springframework.web.multipart.MultipartFile")));
         }
+        if (Objects.equals(mojo.getEnableMergeInputParam(), true)) {
+            config.setMergeInputParam(MergeInputParam.byFlatType());
+        }
         return config;
     }
 
-    private ApiDocRenderer jsonWithCommentRenderer(JsonWithComment jwc) {
-        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
-        if (jwc == null) return renderer;
-        setIf(renderer::setTemplate, jwc.getTemplate());
-        setIf(renderer::setNameHeader, jwc.getNameHeader());
-        setIf(renderer::setFunctionHeader, jwc.getFunctionHeader());
-        setIf(renderer::setInputParamNameHeader, jwc.getInputParamNameHeader());
-        setIf(renderer::setInputParamTitle, jwc.getInputParamTitle());
-        setIf(renderer::setOutputParamTitle, jwc.getOutputParamTitle());
-        setIf(renderer::setFunctionSep, jwc.getFunctionSep());
-        setIf(renderer::setGroupSep, jwc.getGroupSep());
-        return renderer;
+    private void fillTextRenderer(TextRenderer renderer, Text text) {
+        if (text == null) return;
+        setIf(renderer::setTemplate, text.getTemplate());
+        setIf(renderer::setNameHeader, text.getNameHeader());
+        setIf(renderer::setFunctionHeader, text.getFunctionHeader());
+        setIf(renderer::setParamHeader, text.getParamHeader());
+        setIf(renderer::setInputParamTitle, text.getInputParamTitle());
+        setIf(renderer::setOutputParamTitle, text.getOutputParamTitle());
+        setIf(renderer::setPinFunctionComment, text.getPinFunctionComment());
+        setIf(renderer::setSeqPrefix, text.getSeqPrefix());
+
+        setIf(renderer::setMaxNestLevel, text.getMaxNestLevel());
+        setIf(renderer::setIndentPrefix, text.getIndentPrefix());
+        setIf(renderer::setIndentName, text.getIndentName());
+        setIf(renderer::setIndentType, text.getIndentType());
+        setIf(renderer::setIndentRequired, text.getIndentRequired());
+        setIf(renderer::setRequiredTrue, text.getRequiredTrue());
+        setIf(renderer::setRequiredFalse, text.getRequiredFalse());
     }
 
     private ApiDocRenderer swaggerRenderer(Swagger swagger) {

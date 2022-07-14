@@ -126,9 +126,9 @@ public class SwaggerRenderer implements ApiDocRenderer {
         swaggerPath.setConsumes(function.getConsumes());
         swaggerPath.setProduces(function.getProduces());
 
-        Map<String, ApiInputParam> inputParams = function.getInputParams();
+        List<ApiInputParam> inputParams = function.getInputParams();
         List<SwaggerParameter> parameters = new ArrayList<>(inputParams.size());
-        for (ApiInputParam inputParam : inputParams.values()) {
+        for (ApiInputParam inputParam : inputParams) {
             SwaggerParameter parameter = formatParameter(inputParam, swagger);
             parameters.add(parameter);
         }

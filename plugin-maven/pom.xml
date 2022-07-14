@@ -4,7 +4,7 @@
   <groupId>org.dreamcat</groupId>
   <artifactId>apidoc-generator-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>0.3</version>
+  <version>0.4</version>
   <name>apidoc-generator-maven-plugin</name>
   <description>maven plugin for API doc generator</description>
   <url>https://github.com/jrrwll/apidoc-generator</url>
@@ -59,7 +59,7 @@
     <dependency>
       <groupId>org.dreamcat</groupId>
       <artifactId>common-core</artifactId>
-      <version>0.2.1</version>
+      <version>0.3</version>
     </dependency>
     <dependency>
       <groupId>org.dreamcat</groupId>
@@ -69,7 +69,7 @@
     <dependency>
       <groupId>org.dreamcat</groupId>
       <artifactId>apidoc-generator</artifactId>
-      <version>0.3</version>
+      <version>0.4</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -142,7 +142,8 @@
             <id>sign-artifacts</id>
             <phase>verify</phase>
             <goals>
-              <goal>sign</goal><!-- mvn package -Dgpg.passphrase=$GPG_PASSPHRASE -->
+              <!-- mvn install -Dmaven.test.skip=true -Dgpg.passphrase=$GPG_PASSPHRASE -->
+              <goal>sign</goal>
             </goals>
           </execution>
         </executions>

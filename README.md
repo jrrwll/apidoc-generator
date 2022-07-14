@@ -24,9 +24,10 @@ mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
 or add shorthand to `~/.m2/settings.xml`
 
 ```xml
+
 <pluginGroups>
-    <pluginGroup>org.dreamcat</pluginGroup>
-  </pluginGroups>
+  <pluginGroup>org.dreamcat</pluginGroup>
+</pluginGroups>
 ```
 
 ```shell

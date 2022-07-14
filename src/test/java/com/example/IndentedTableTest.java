@@ -4,30 +4,22 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.renderer.text.JsonWithCommentRenderer;
-import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.cli.generator.apidoc.renderer.text.IndentedTableRenderer;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Jerry Will
- * @version 2021-12-09
+ * @version 2022-07-12
  */
-class JsonWithCommentTest {
+class IndentedTableTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
-    JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
 
     @Test
     void testController() throws Exception {
         String javaFileDir = srcDir + "/com/example/controller";
         List<String> basePackages = Collections.singletonList("com.example");
-
-        renderer.setPinFunctionComment(true);
-        renderer.setSeqPrefix("3.2.");
-        renderer.setInputParamTitle(null);
-        renderer.setOutputParamTitle("");
         generate(srcDir, javaFileDir, basePackages);
     }
 
@@ -43,14 +35,13 @@ class JsonWithCommentTest {
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));
-        config.setUseJsonWithComment(true);
-        config.setIgnoreInputParamTypes(CollectionUtil.setOf(
-                "org.springframework.web.multipart.MultipartFile",
-                "com.example.base.ApiContext"
+        config.setUseIndentedTable(true);
+        config.setIgnoreInputParamTypes(Collections.singleton(
+                "org.springframework.web.multipart.MultipartFile"
         ));
         config.setEnableSpringWeb(true);
-        config.setMergeInputParam(MergeInputParam.builder().byFlatType(true).build());
 
+        IndentedTableRenderer renderer = new IndentedTableRenderer();
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
         System.out.println(doc);

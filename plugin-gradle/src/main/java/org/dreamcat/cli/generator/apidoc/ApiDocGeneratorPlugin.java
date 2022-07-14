@@ -10,13 +10,16 @@ import org.gradle.api.Project;
 public class ApiDocGeneratorPlugin implements Plugin<Project> {
 
     private static final String name = "apidocGenerate";
+    // private static final String taskGroup = "documentation";
 
     @Override
     public void apply(Project project) {
-        ApiDocGeneratorExtension extension = project.getExtensions()
-                .create(name, ApiDocGeneratorExtension.class);
+        // ApiDocGeneratorExtension extension =
+        project.getExtensions().create(name, ApiDocGeneratorExtension.class);
 
-        project.getTasks().register(name, ApiDocGeneratorTask.class,
-                project, extension);
+        // project.getTasks().create(name, ApiDocGeneratorTask.class, project, extension);
+        // Task task =
+        project.getTasks().create(name, ApiDocGeneratorTask.class);
+        // task.setGroup(taskGroup);
     }
 }

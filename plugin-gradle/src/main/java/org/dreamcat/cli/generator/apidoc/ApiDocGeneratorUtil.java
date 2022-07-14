@@ -5,7 +5,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.dreamcat.common.javac.FileClassLoader;
 
@@ -19,12 +18,12 @@ public class ApiDocGeneratorUtil {
     }
 
     public static ClassLoader buildUserCodeClassLoader(List<String> classpath) {
-        List<URL> urls = classpath.stream()
-                .map(ApiDocGeneratorUtil::buildURL).collect(Collectors.toList());
+        URL[] urls = classpath.stream()
+                .map(ApiDocGeneratorUtil::buildURL).toArray(URL[]::new);
 
         ClassLoader parent = ApiDocGeneratorUtil.class.getClassLoader();
-        return new FileClassLoader(urls.toArray(new URL[0]), parent);
-        // return new URLClassLoader(urls.toArray(new URL[0]), parent);
+        return new FileClassLoader(urls, parent);
+        // return new URLClassLoader(urls, parent);
     }
 
     @SneakyThrows

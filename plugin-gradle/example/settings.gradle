@@ -1,8 +1,17 @@
 pluginManagement {
     repositories {
         mavenLocal()
+        gradlePluginPortal()
         mavenCentral()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    }
+
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.namespace == 'org.dreamcat') {
+                useModule("org.dreamcat:apidoc-generator-gradle-plugin:${requested.version}")
+            }
+        }
     }
 }
 

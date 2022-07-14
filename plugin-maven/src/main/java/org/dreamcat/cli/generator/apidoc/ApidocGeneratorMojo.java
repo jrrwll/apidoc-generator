@@ -35,10 +35,12 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     private Boolean useRelativeJavaFilePath;
     @Parameter
     private List<String> ignoreInputParamTypes;
+    @Parameter(defaultValue = "false")
+    private Boolean enableMergeInputParam;
     @Parameter(defaultValue = "true")
     private Boolean enableSpringWeb;
     @Parameter
-    private JsonWithComment JsonWithComment;
+    private Text text;
     @Parameter
     private Swagger swagger;
 
@@ -50,10 +52,12 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     // private MavenProject project;
 
     @Data
-    public static class JsonWithComment {
+    public static class Text {
 
         @Parameter(defaultValue = "true")
         private Boolean enabled;
+        @Parameter
+        private Boolean enableIndentedTable;
         @Parameter
         private String template;
         @Parameter
@@ -61,15 +65,32 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         @Parameter
         private String functionHeader;
         @Parameter
-        private String inputParamNameHeader;
+        private String paramHeader;
         @Parameter
         private String inputParamTitle;
         @Parameter
         private String outputParamTitle;
+        @Parameter(defaultValue = "false")
+        private Boolean pinFunctionComment;
         @Parameter
-        private String functionSep;
+        private String seqPrefix;
+
         @Parameter
-        private String groupSep;
+        private Integer maxNestLevel;
+        @Parameter
+        private String indentPrefix;
+        @Parameter
+        private String indentName;
+        @Parameter
+        private String indentType;
+        @Parameter
+        private String indentRequired;
+        @Parameter
+        private String indentComment;
+        @Parameter
+        private String requiredTrue;
+        @Parameter
+        private String requiredFalse;
     }
 
     @Data

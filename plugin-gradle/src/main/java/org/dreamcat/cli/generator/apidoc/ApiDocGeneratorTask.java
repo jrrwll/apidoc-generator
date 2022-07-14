@@ -8,19 +8,20 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
-import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
+import org.dreamcat.cli.generator.apidoc.ApiDocConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
+import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Text;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.jwc.JsonWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.IndentedTableRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.JsonWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.text.TextRenderer;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
 import org.dreamcat.common.x.jackson.JsonUtil;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskAction;
 
@@ -30,19 +31,18 @@ import org.gradle.api.tasks.TaskAction;
  */
 public class ApiDocGeneratorTask extends DefaultTask {
 
-    private final Project project;
-    private final Logger logger;
-    private final ApiDocGeneratorExtension extension;
+    // private final ApiDocGeneratorExtension extension;
 
-    @javax.inject.Inject
-    public ApiDocGeneratorTask(Project project, ApiDocGeneratorExtension extension) {
-        this.project = project;
-        this.logger = project.getLogger();
-        this.extension = extension;
-    }
+    // @javax.inject.Inject
+    // public ApiDocGeneratorTask(Project project, ApiDocGeneratorExtension extension) {
+    //     this.extension = extension;
+    // }
 
     @TaskAction
     public void run() {
+        ApiDocGeneratorExtension extension = getProject().getExtensions()
+                .getByType(ApiDocGeneratorExtension.class);
+
         // set extra dependencies
         List<String> classpath = extension.getClassDirs().getOrElse(new ArrayList<>());
         if (ObjectUtil.isEmpty(classpath)) {
@@ -57,20 +57,27 @@ public class ApiDocGeneratorTask extends DefaultTask {
         ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(classpath);
 
         ApiDocConfig config = buildApiDocConfig();
-        ApiDocRenderer renderer;
 
         Swagger swagger = extension.getSwagger();
-        JsonWithComment jwc = extension.getJsonWithComment();
+        Text text = extension.getText();
         // swagger
         if (swagger.getEnabled().getOrElse(false)) {
-            renderer = swaggerRenderer(swagger);
+            ApiDocRenderer renderer = swaggerRenderer(swagger);
 
             output(config, renderer, userCodeClassLoader, ".yaml");
         }
         // jwc
-        if (jwc.getEnabled().getOrElse(true)) {
-            renderer = jsonWithCommentRenderer(jwc);
-            config.setJsonWithComment(true);
+        if (text.getEnabled().getOrElse(true)) {
+            TextRenderer renderer;
+            if (text.getEnableIndentedTable().getOrElse(false)) {
+                renderer = new IndentedTableRenderer();
+                config.setUseIndentedTable(true);
+            } else {
+                renderer = new JsonWithCommentRenderer();
+                config.setUseJsonWithComment(true);
+            }
+            fillTextRenderer(renderer, text);
+            config.setUseJsonWithComment(true);
 
             output(config, renderer, userCodeClassLoader, ".md");
         }
@@ -79,32 +86,38 @@ public class ApiDocGeneratorTask extends DefaultTask {
     private void output(
             ApiDocConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader, String suffix) {
-        logger.info("generate with config: {}, renderer: {}",
+        getLogger().info("generate with config: {}, renderer: {}",
                 JsonUtil.toJson(config), renderer.getClass().getSimpleName());
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
 
+        ApiDocGeneratorExtension extension = getProject().getExtensions()
+                .getByType(ApiDocGeneratorExtension.class);
         String outputPath = extension.getOutputPath().getOrNull();
         boolean rewrite = extension.getRewrite().get();
         if (outputPath == null) {
-            outputPath = "apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
+            String userDir = System.getProperty("user.dir");
+            outputPath = userDir + "/apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
         if (outputFile.exists() && !rewrite) {
-            logger.error(
+            getLogger().error(
                     "output file already exists(set `rewrite = true` to confirm it): {}", outputFile);
         }
 
         String doc = generator.generate();
         try {
+            getLogger().warn("writing to {}", outputFile);
             FileUtil.writeFrom(outputFile, doc);
         } catch (IOException e) {
-            logger.error("error to write file {}, doc:\n {}", outputFile, doc);
+            getLogger().error("error to write file {}, doc:\n {}", outputFile, doc);
         }
     }
 
     private ApiDocConfig buildApiDocConfig() {
         ApiDocConfig config = new ApiDocConfig();
+        ApiDocGeneratorExtension extension = getProject().getExtensions()
+                .getByType(ApiDocGeneratorExtension.class);
         setIf(config::setBasePackages, extension.getBasePackages());
 
         setIf(config::setSrcDirs, extension.getSrcDirs());
@@ -116,21 +129,31 @@ public class ApiDocGeneratorTask extends DefaultTask {
 
         config.setUseRelativeJavaFilePath(extension.getUseRelativeJavaFilePath().get());
         config.setIgnoreInputParamTypes(new HashSet<>(extension.getIgnoreInputParamTypes().get()));
+        if (extension.getEnableMergeInputParam().getOrElse(false)) {
+            config.setMergeInputParam(MergeInputParam.byFlatType());
+        }
         config.setEnableSpringWeb(extension.getEnableSpringWeb().get());
+        config.setEnableAutoDetect(extension.getEnableAutoDetect().get());
         return config;
     }
 
-    private ApiDocRenderer jsonWithCommentRenderer(JsonWithComment jwc) {
-        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
-        setIf(renderer::setTemplate, jwc.getTemplate());
-        setIf(renderer::setNameHeader, jwc.getNameHeader());
-        setIf(renderer::setFunctionHeader, jwc.getFunctionHeader());
-        setIf(renderer::setInputParamNameHeader, jwc.getInputParamNameHeader());
-        setIf(renderer::setInputParamTitle, jwc.getInputParamTitle());
-        setIf(renderer::setOutputParamTitle, jwc.getOutputParamTitle());
-        setIf(renderer::setFunctionSep, jwc.getFunctionSep());
-        setIf(renderer::setGroupSep, jwc.getGroupSep());
-        return renderer;
+    private void fillTextRenderer(TextRenderer renderer, Text text) {
+        setIf(renderer::setTemplate, text.getTemplate());
+        setIf(renderer::setNameHeader, text.getNameHeader());
+        setIf(renderer::setFunctionHeader, text.getFunctionHeader());
+        setIf(renderer::setParamHeader, text.getParamHeader());
+        setIf(renderer::setInputParamTitle, text.getInputParamTitle());
+        setIf(renderer::setOutputParamTitle, text.getOutputParamTitle());
+        setIf(renderer::setPinFunctionComment, text.getPinFunctionComment());
+        setIf(renderer::setSeqPrefix, text.getSeqPrefix());
+
+        setIf(renderer::setMaxNestLevel, text.getMaxNestLevel());
+        setIf(renderer::setIndentPrefix, text.getIndentPrefix());
+        setIf(renderer::setIndentName, text.getIndentName());
+        setIf(renderer::setIndentType, text.getIndentType());
+        setIf(renderer::setIndentRequired, text.getIndentRequired());
+        setIf(renderer::setRequiredTrue, text.getRequiredTrue());
+        setIf(renderer::setRequiredFalse, text.getRequiredFalse());
     }
 
     private ApiDocRenderer swaggerRenderer(Swagger swagger) {
@@ -165,7 +188,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
         }
         File[] files = current.listFiles();
         if (files == null) {
-            project.getLogger().error("error at {}, not a directory: {}", methodName, current);
+            getLogger().error("error at {}, not a directory: {}", methodName, current);
             return Collections.emptyList();
         }
 
@@ -179,7 +202,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
             }
         }
         if (paths.isEmpty()) {
-            project.getLogger().error("error at {}, cannot find {}/*/{}",
+            getLogger().error("error at {}, cannot find {}/*/{}",
                     methodName, current, child);
         }
         return paths;

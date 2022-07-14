@@ -1,11 +1,14 @@
 package com.example.service;
 
+import com.example.base.ApiContext;
 import com.example.base.ApiPageSummary;
 import com.example.base.ApiResult;
 import com.example.param.ComplexCreateParam;
 import com.example.param.ComplexListParam;
 import com.example.result.ComplexModel;
 import com.example.result.ComplexSummaryModel;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author Jerry Will
@@ -14,10 +17,23 @@ import com.example.result.ComplexSummaryModel;
 public interface ComplexService {
 
     // get complex
-    ApiResult<ComplexModel> get(String id);
+    ApiResult<ComplexModel> get(
+            @NotBlank(message = "id is required") String id);
+
+    /**
+     * get complex with view
+     *
+     * @param id      complex id
+     * @param version complex version
+     * @return a complex model
+     */
+    ApiResult<ComplexModel> getWithVersion(
+            @NotBlank(message = "id is required") String id,
+            Integer version);
 
     // list complex
-    ApiResult<ApiPageSummary<ComplexModel, ComplexSummaryModel>> list(ComplexListParam param);
+    ApiResult<ApiPageSummary<ComplexModel, ComplexSummaryModel>> list(
+            @NotNull(message = "param is required") ComplexListParam param);
 
     /**
      * create complex
@@ -26,11 +42,16 @@ public interface ComplexService {
      * @param file  attachment
      * @return complex id
      */
-    ApiResult<String> create(ComplexCreateParam param, byte[] file);
+    ApiResult<String> create(
+            @NotNull(message = "param is required") ComplexCreateParam param,
+            @NotNull(message = "file is required") byte[] file);
 
     // update complex
-    ApiResult<String> update(ComplexCreateParam param);
+    ApiResult<String> update(
+            @NotNull(message = "param is required") ComplexCreateParam param);
 
     // delete complex
-    ApiResult<Void> delete(String id);
+    ApiResult<Void> delete(
+            @NotBlank(message = "id is required") String id,
+            @NotNull(message = "context is required") ApiContext context);
 }

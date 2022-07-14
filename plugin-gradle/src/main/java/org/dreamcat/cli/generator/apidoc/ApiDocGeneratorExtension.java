@@ -30,27 +30,33 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract ListProperty<String> getIgnoreInputParamTypes();
 
+    abstract Property<Boolean> getEnableMergeInputParam();
+
+    abstract Property<Boolean> getEnableAutoDetect();
+
     abstract Property<Boolean> getEnableSpringWeb();
 
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
         getUseRelativeJavaFilePath().convention(true);
         getIgnoreInputParamTypes().convention(Arrays.asList(
-                "org.springframework.web.multipart.MultipartFile"
+                "org.springframework.web.multipart.MultipartFile",
+                "[B"
         ));
+        getEnableAutoDetect().convention(true);
         getEnableSpringWeb().convention(true);
     }
 
     /// nested
 
     @Nested
-    abstract JsonWithComment getJsonWithComment();
+    abstract Text getText();
 
     @Nested
     abstract Swagger getSwagger();
 
-    public void jsonWithComment(Action<? super JsonWithComment> action) {
-        action.execute(getJsonWithComment());
+    public void jsonWithComment(Action<? super Text> action) {
+        action.execute(getText());
     }
 
     public void swagger(Action<? super Swagger> action) {
@@ -59,9 +65,13 @@ public abstract class ApiDocGeneratorExtension {
 
     /// data class
 
-    public abstract static class JsonWithComment {
+    public abstract static class Text {
 
         abstract Property<Boolean> getEnabled();
+
+        abstract Property<Boolean> getEnableJsonWithComment();
+
+        abstract Property<Boolean> getEnableIndentedTable();
 
         abstract Property<String> getTemplate();
 
@@ -69,15 +79,29 @@ public abstract class ApiDocGeneratorExtension {
 
         abstract Property<String> getFunctionHeader();
 
-        abstract Property<String> getInputParamNameHeader();
+        abstract Property<String> getParamHeader();
 
         abstract Property<String> getInputParamTitle();
 
         abstract Property<String> getOutputParamTitle();
 
-        abstract Property<String> getFunctionSep();
+        abstract Property<Boolean> getPinFunctionComment();
 
-        abstract Property<String> getGroupSep();
+        abstract Property<String> getSeqPrefix();
+
+        abstract Property<Integer> getMaxNestLevel();
+
+        abstract Property<String> getIndentPrefix();
+
+        abstract Property<String> getIndentName();
+
+        abstract Property<String> getIndentType();
+
+        abstract Property<String> getIndentRequired();
+
+        abstract Property<String> getRequiredTrue();
+
+        abstract Property<String> getRequiredFalse();
     }
 
     public abstract static class Swagger {

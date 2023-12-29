@@ -29,14 +29,14 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.io.PathUtil;
+import org.dreamcat.common.json.JSONWithComment;
+import org.dreamcat.common.reflect.ObjectMethod;
+import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
+import org.dreamcat.common.reflect.ObjectType;
 import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.json.legacy.JSONWithComment;
-import org.dreamcat.common.reflect.ObjectMethod;
-import org.dreamcat.common.reflect.ObjectParameter;
-import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will

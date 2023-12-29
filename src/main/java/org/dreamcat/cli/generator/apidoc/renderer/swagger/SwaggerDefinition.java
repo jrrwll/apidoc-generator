@@ -12,8 +12,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.type.ObjectField;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.reflect.ObjectField;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will

@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.dreamcat.common.function.VoidConsumer;
+import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
@@ -45,9 +46,9 @@ public class ApiDocConfig {
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
     public void afterPropertySet(ClassLoader classLoader) {
-        ObjectUtil.requireNotEmpty(basePackages, "basePackages");
-        ObjectUtil.requireNotEmpty(srcDirs, "srcDirs");
-        ObjectUtil.requireNotEmpty(javaFileDirs, "javaFileDirs");
+        AssertUtil.requireNotEmpty(basePackages, "basePackages");
+        AssertUtil.requireNotEmpty(srcDirs, "srcDirs");
+        AssertUtil.requireNotEmpty(javaFileDirs, "javaFileDirs");
 
         // auto detect
         if (enableAutoDetect) {

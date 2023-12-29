@@ -11,8 +11,8 @@ import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
-import org.dreamcat.databind.type.ObjectField;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.reflect.ObjectField;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will

@@ -29,13 +29,14 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.io.PathUtil;
+import org.dreamcat.common.reflect.ObjectRandomGenerator;
+import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.instance.RandomInstance;
 import org.dreamcat.databind.json.legacy.JSONWithComment;
-import org.dreamcat.databind.type.ObjectMethod;
-import org.dreamcat.databind.type.ObjectParameter;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.reflect.ObjectMethod;
+import org.dreamcat.common.reflect.ObjectParameter;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will
@@ -47,23 +48,23 @@ public class ApiDocParser {
     final ApiDocConfig config;
     final ClassLoader classLoader;
     final CommentJavaParser commentJavaParser;
-    final RandomInstance randomInstance;
+    final ObjectRandomGenerator randomGenerator;
     @Setter
     ApiParamFieldParser apiParamFieldParser;
 
     public ApiDocParser(ApiDocConfig config) {
-        this(config, null, new RandomInstance());
+        this(config, null, new ObjectRandomGenerator());
     }
 
-    public ApiDocParser(ApiDocConfig config, ClassLoader classLoader, RandomInstance randomInstance) {
+    public ApiDocParser(ApiDocConfig config, ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
         Objects.requireNonNull(config);
         config.afterPropertySet(classLoader);
-        ObjectUtil.requireNotNull(randomInstance, "randomInstance");
+        AssertUtil.requireNonNull(randomGenerator, "randomGenerator");
 
         this.config = config;
         this.classLoader = classLoader;
         this.commentJavaParser = new CommentJavaParser(config);
-        this.randomInstance = randomInstance;
+        this.randomGenerator = randomGenerator;
 
         this.apiParamFieldParser = new ApiParamFieldParser(config, commentJavaParser);
     }
@@ -110,7 +111,7 @@ public class ApiDocParser {
 
     private void parseClass(CommentClassDef classDef, Map<String, ApiGroup> groupMap) {
         String type = classDef.getType();
-        Class<?> serviceType = ReflectUtil.forName(type, true, classLoader);
+        Class<?> serviceType = ReflectUtil.forName(type, classLoader);
 
         ApiGroup apiGroup = groupMap.computeIfAbsent(type, it -> new ApiGroup());
         apiGroup.setName(type);
@@ -306,7 +307,8 @@ public class ApiDocParser {
     }
 
     private String toJSONWithComment(ObjectType type) {
-        Object bean = randomInstance.randomValue(type);
+        ObjectRandomGenerator randomGenerator = new ObjectRandomGenerator();
+        Object bean = randomGenerator.generate(type);
         return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
     }
 }

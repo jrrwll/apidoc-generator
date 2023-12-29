@@ -10,9 +10,9 @@ import java.util.Map;
 import lombok.Setter;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
-import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.json.JsonUtil;
 
 /**
  * @author Jerry Will
@@ -46,7 +46,7 @@ public abstract class TextRenderer implements ApiDocRenderer {
     @Override
     public void render(ApiDoc apiDoc, Writer out) {
         Map<String, Object> context = JsonUtil.toMap(apiDoc);
-        List<Field> fields = ReflectUtil.retrieveNoStaticFields(getClass());
+        List<Field> fields = ReflectUtil.retrieveBeanFields(getClass());
         for (Field field : fields) {
             if (Modifier.isTransient(field.getModifiers())) continue;
             context.put(field.getName(), ReflectUtil.getValue(this, field));

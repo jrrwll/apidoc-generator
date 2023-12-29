@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
-import org.dreamcat.common.x.jackson.YamlUtil;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.json.YamlUtil;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will

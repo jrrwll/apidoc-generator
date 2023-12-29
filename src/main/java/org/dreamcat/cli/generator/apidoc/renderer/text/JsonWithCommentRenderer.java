@@ -2,7 +2,7 @@ package org.dreamcat.cli.generator.apidoc.renderer.text;
 
 import java.io.IOException;
 import lombok.Setter;
-import org.dreamcat.common.io.ClassPathUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 
 /**
  * @author Jerry Will

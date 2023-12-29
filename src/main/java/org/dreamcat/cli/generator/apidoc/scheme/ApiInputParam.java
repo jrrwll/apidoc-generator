@@ -2,7 +2,7 @@ package org.dreamcat.cli.generator.apidoc.scheme;
 
 import java.util.List;
 import lombok.Data;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * complex type: array, object

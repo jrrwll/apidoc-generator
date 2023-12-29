@@ -18,13 +18,13 @@ ext {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
     slf4jVersion = "1.7.36"
     // https://mvnrepository.com/artifact/org.projectlombok/lombok
-    lombokVersion = "1.18.26"
+    lombokVersion = "1.18.30"
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     junitVersion = "5.9.2"
     // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
     javaparserVersion = '3.25.2'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    jacksonVersion = '2.14.2'
+    jacksonVersion = '2.15.2'
 }
 
 dependencies {
@@ -42,10 +42,9 @@ dependencies {
 
     implementation "com.github.javaparser:javaparser-core:$javaparserVersion"
     implementation "com.github.javaparser:javaparser-symbol-solver-core:$javaparserVersion"
-    implementation 'org.dreamcat:databind-core:0.2'
-    implementation 'org.dreamcat:databind-json:0.2'
-    implementation 'org.dreamcat:common-core:0.3'
-    implementation 'org.dreamcat:common-x:0.2'
+    // implementation 'org.dreamcat:databind-core:0.2'
+    // implementation 'org.dreamcat:databind-json:0.2'
+    implementation 'org.dreamcat:common:0.4'
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
     // // https://mvnrepository.com/artifact/org.freemarker/freemarker

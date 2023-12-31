@@ -3,11 +3,11 @@ package com.example;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.renderer.text.JsonWithCommentRenderer;
-import org.dreamcat.common.util.CollectionUtil;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
+import org.dreamcat.common.util.SetUtil;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -17,17 +17,18 @@ import org.junit.jupiter.api.Test;
 class JsonWithCommentTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
-    JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
+    TextTemplateRenderer renderer = TextTemplateRenderer.builder()
+            .jsnoWithComment().build();
 
     @Test
     void testController() throws Exception {
-        String javaFileDir = srcDir + "/com/example/controller";
-        List<String> basePackages = Collections.singletonList("com.example");
-
         renderer.setPinFunctionComment(true);
         renderer.setSeqPrefix("3.2.");
         renderer.setInputParamTitle(null);
         renderer.setOutputParamTitle("");
+
+        String javaFileDir = srcDir + "/com/example/controller";
+        List<String> basePackages = Collections.singletonList("com.example");
         generate(srcDir, javaFileDir, basePackages);
     }
 
@@ -39,12 +40,11 @@ class JsonWithCommentTest {
     }
 
     void generate(String srcDir, String javaFileDir, List<String> basePackages) throws Exception {
-        ApiDocConfig config = new ApiDocConfig();
+        ApiDocParserConfig config = new ApiDocParserConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));
-        config.setUseJsonWithComment(true);
-        config.setIgnoreInputParamTypes(CollectionUtil.setOf(
+        config.setIgnoreInputParamTypes(SetUtil.of(
                 "org.springframework.web.multipart.MultipartFile",
                 "com.example.base.ApiContext"
         ));

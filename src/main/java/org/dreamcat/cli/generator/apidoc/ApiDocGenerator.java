@@ -4,11 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import lombok.Getter;
 import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.parser.ApiDocParser;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
 
@@ -20,20 +18,20 @@ public class ApiDocGenerator {
 
     private final ApiDocParser parser;
     private final ApiDocRenderer renderer;
-    @Getter
     private final ObjectRandomGenerator randomGenerator = new ObjectRandomGenerator();
 
-    public ApiDocGenerator(ApiDocConfig config, ApiDocRenderer renderer) {
+    public ObjectRandomGenerator getRandomGenerator() {
+        return randomGenerator;
+    }
+
+    public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer) {
         this(config, renderer, ApiDocGenerator.class.getClassLoader());
     }
 
-    public ApiDocGenerator(ApiDocConfig config, ApiDocRenderer renderer, ClassLoader classLoader) {
+    public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer, ClassLoader classLoader) {
         this.parser = new ApiDocParser(config, classLoader, randomGenerator);
         this.renderer = renderer;
-        // use classLoader on render
-        if (renderer instanceof SwaggerRenderer) {
-            ((SwaggerRenderer) renderer).setClassLoader(classLoader);
-        }
+        this.renderer.setClassLoader(classLoader);
     }
 
     @SneakyThrows

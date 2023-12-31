@@ -20,7 +20,7 @@ import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
-import org.dreamcat.common.x.jackson.JsonUtil;
+import org.dreamcat.common.json.JsonUtil;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskAction;
@@ -90,25 +90,32 @@ public class ApiDocGeneratorTask extends DefaultTask {
                 JsonUtil.toJson(config), renderer.getClass().getSimpleName());
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
+        String doc = generator.generate();
 
         ApiDocGeneratorExtension extension = getProject().getExtensions()
                 .getByType(ApiDocGeneratorExtension.class);
         String outputPath = extension.getOutputPath().getOrNull();
         boolean rewrite = extension.getRewrite().get();
         if (outputPath == null) {
-            String userDir = System.getProperty("user.dir");
-            outputPath = userDir + "/apidoc-" + RandomUtil.timeBaseRadix36W16().substring(4, 12) + suffix;
+            if (getLogger().isDebugEnabled()) {
+                getLogger().warn("only print doc since `outputPath` is unset");
+            }
+            getLogger().info("********** Generated Doc **********");
+            getLogger().info(doc);
+            getLogger().info("***********************************");
+            return;
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
         if (outputFile.exists() && !rewrite) {
             getLogger().error(
                     "output file already exists(set `rewrite = true` to confirm it): {}", outputFile);
+            return;
         }
 
-        String doc = generator.generate();
         try {
-            getLogger().warn("writing to {}", outputFile);
+            getLogger().info("writing to {}", outputFile);
             FileUtil.writeFrom(outputFile, doc);
+            getLogger().info("done");
         } catch (IOException e) {
             getLogger().error("error to write file {}, doc:\n {}", outputFile, doc);
         }

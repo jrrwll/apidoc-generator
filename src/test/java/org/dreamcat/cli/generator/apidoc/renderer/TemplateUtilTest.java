@@ -1,6 +1,7 @@
-package org.dreamcat.cli.generator.apidoc.renderer.text;
+package org.dreamcat.cli.generator.apidoc.renderer;
 
 import java.util.Collections;
+import org.dreamcat.cli.generator.apidoc.renderer.TemplateUtil;
 import org.junit.jupiter.api.Test;
 
 /**

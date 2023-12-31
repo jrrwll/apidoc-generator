@@ -24,7 +24,7 @@ import org.dreamcat.common.util.ReflectUtil;
  * @version 2021-12-09
  */
 @Data
-public class ApiDocConfig {
+public class ApiDocParserConfig {
 
     // parser
     private List<String> basePackages = Collections.singletonList(""); // java files dirs
@@ -38,10 +38,6 @@ public class ApiDocConfig {
     private Http http; // http annotations
     private Validation validation; // auto detect javax-validation
     private MergeInputParam mergeInputParam; // when to use indented table
-
-    // output
-    private boolean useJsonWithComment;
-    private boolean useIndentedTable;
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
@@ -165,13 +161,13 @@ public class ApiDocConfig {
     private Http springWeb(ClassLoader classLoader) {
         Http h = new Http();
         h.setPath(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", classLoader));
-        h.setPathGetter(ApiDocConfig::requestMappingPath);
+        h.setPathGetter(ApiDocParserConfig::requestMappingPath);
         h.setAction(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", classLoader));
-        h.setActionGetter(ApiDocConfig::requestMappingMethod);
+        h.setActionGetter(ApiDocParserConfig::requestMappingMethod);
         h.setRequired(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestParam", classLoader));
-        h.setRequiredGetter(ApiDocConfig::requestParamRequired);
+        h.setRequiredGetter(ApiDocParserConfig::requestParamRequired);
         h.setPathVar(ReflectUtil.forName("org.springframework.web.bind.annotation.PathVariable", classLoader));
-        h.setPathVarGetter(ApiDocConfig::pathVariablePathVar);
+        h.setPathVarGetter(ApiDocParserConfig::pathVariablePathVar);
         return h;
     }
 

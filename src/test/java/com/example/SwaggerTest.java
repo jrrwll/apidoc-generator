@@ -3,7 +3,7 @@ package com.example;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class SwaggerTest {
         String javaFileDir = srcDir + "/com/example/controller";
         List<String> basePackages = Collections.singletonList("com.example");
 
-        ApiDocConfig config = new ApiDocConfig();
+        ApiDocParserConfig config = new ApiDocParserConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));
@@ -31,7 +31,6 @@ class SwaggerTest {
         config.setEnableSpringWeb(true);
 
         SwaggerRenderer renderer = new SwaggerRenderer();
-
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
         System.out.println(doc);

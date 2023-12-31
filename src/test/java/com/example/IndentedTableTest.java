@@ -3,9 +3,9 @@ package com.example;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.renderer.text.IndentedTableRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,17 +31,16 @@ class IndentedTableTest {
     }
 
     void generate(String srcDir, String javaFileDir, List<String> basePackages) throws Exception {
-        ApiDocConfig config = new ApiDocConfig();
+        ApiDocParserConfig config = new ApiDocParserConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));
-        config.setUseIndentedTable(true);
         config.setIgnoreInputParamTypes(Collections.singleton(
                 "org.springframework.web.multipart.MultipartFile"
         ));
         config.setEnableSpringWeb(true);
 
-        IndentedTableRenderer renderer = new IndentedTableRenderer();
+        TextTemplateRenderer renderer = TextTemplateRenderer.builder().build();
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
         System.out.println(doc);

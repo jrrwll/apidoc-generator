@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Validation;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
@@ -21,7 +21,7 @@ import org.dreamcat.common.reflect.ObjectType;
 @RequiredArgsConstructor
 public class ApiParamFieldParser {
 
-    final ApiDocConfig config;
+    final ApiDocParserConfig config;
     final CommentJavaParser commentJavaParser;
 
     private final Map<ObjectType, List<ApiParamField>> paramFieldCache = new ConcurrentHashMap<>();
@@ -52,7 +52,6 @@ public class ApiParamFieldParser {
             paramField.setFields(fields);
 
             paramFields.add(paramField);
-
         }
         return paramFields;
     }

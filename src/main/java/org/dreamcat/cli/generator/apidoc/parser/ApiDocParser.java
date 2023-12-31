@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Http;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Validation;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
@@ -45,18 +45,18 @@ import org.dreamcat.common.util.ReflectUtil;
 @Slf4j
 public class ApiDocParser {
 
-    final ApiDocConfig config;
+    final ApiDocParserConfig config;
     final ClassLoader classLoader;
     final CommentJavaParser commentJavaParser;
     final ObjectRandomGenerator randomGenerator;
     @Setter
     ApiParamFieldParser apiParamFieldParser;
 
-    public ApiDocParser(ApiDocConfig config) {
+    public ApiDocParser(ApiDocParserConfig config) {
         this(config, null, new ObjectRandomGenerator());
     }
 
-    public ApiDocParser(ApiDocConfig config, ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
+    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
         Objects.requireNonNull(config);
         config.afterPropertySet(classLoader);
         AssertUtil.requireNonNull(randomGenerator, "randomGenerator");
@@ -151,14 +151,9 @@ public class ApiDocParser {
         ApiOutputParam outputParam = new ApiOutputParam();
         outputParam.setType(returnType);
         outputParam.setComment(methodDef.getReturnComment());
-        if (config.isUseJsonWithComment()) {
-            ObjectType type = outputParam.getType();
-            outputParam.setJsonWithComment(toJSONWithComment(type));
-        }
-        if (config.isUseIndentedTable()) {
-            ObjectType type = outputParam.getType();
-            outputParam.setFields(apiParamFieldParser.resolveParamField(type));
-        }
+        // extra info
+        outputParam.setJsonWithComment(toJSONWithComment(returnType));
+        outputParam.setFields(apiParamFieldParser.resolveParamField(returnType));
         apiFunction.setOutputParam(outputParam);
 
         // input
@@ -232,12 +227,8 @@ public class ApiDocParser {
         apiParam.setTypeName(type.getType().getSimpleName());
         apiParam.setName(parameter.getName());
         apiParam.setComment(parameter.getComment());
-        if (config.isUseJsonWithComment()) {
-            apiParam.setJsonWithComment(toJSONWithComment(type));
-        }
-        if (config.isUseIndentedTable()) {
-            apiParam.setFields(apiParamFieldParser.resolveParamField(type));
-        }
+        apiParam.setJsonWithComment(toJSONWithComment(type));
+        apiParam.setFields(apiParamFieldParser.resolveParamField(type));
 
         apiParam.setRequired(parseParameterRequired(objectParameter.getParameter()));
 

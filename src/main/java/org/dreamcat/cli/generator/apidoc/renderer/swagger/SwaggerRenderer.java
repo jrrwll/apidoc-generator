@@ -22,10 +22,11 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.common.util.ByteUtil;
+import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.type.ObjectType;
+import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will
@@ -154,7 +155,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
 
         SwaggerParameter parameter = new SwaggerParameter();
         parameter.setDescription(inputParam.getComment());
-        parameter.setRequired(ObjectUtil.mapOrElse(inputParam.getRequired(), it -> it, true));
+        parameter.setRequired(FunctionUtil.mapOrElse(inputParam.getRequired(), it -> it, true));
 
         SwaggerType swaggerType = SwaggerType.parse(type.getType());
         String pathVar = inputParam.getPathVar();
@@ -231,11 +232,9 @@ public class SwaggerRenderer implements ApiDocRenderer {
     private String fieldNameAnnotationName(Field field) {
         Class<? extends Annotation> annType;
         if (classLoader == null) {
-            annType = ReflectUtil.forName(
-                    fieldNameAnnotation);
+            annType = ReflectUtil.forName(fieldNameAnnotation);
         } else {
-            annType = ReflectUtil.forName(
-                    fieldNameAnnotation, true, classLoader);
+            annType = ReflectUtil.forName(fieldNameAnnotation, classLoader);
         }
         Object ann = field.getDeclaredAnnotation(annType);
         if (ann != null) {

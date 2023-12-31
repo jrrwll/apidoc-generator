@@ -29,4 +29,8 @@ public interface ApiDocRenderer {
             throw new RuntimeException(e);
         }
     }
+
+    default void setClassLoader(ClassLoader classLoader) {
+        // nop
+    }
 }

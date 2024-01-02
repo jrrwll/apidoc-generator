@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ClassPathUtil;
@@ -19,6 +20,7 @@ import org.dreamcat.common.util.ReflectUtil;
  * @version 2022-07-11
  */
 @Setter
+@Accessors(chain = true)
 @RequiredArgsConstructor
 public class TextTemplateRenderer implements ApiDocRenderer {
 
@@ -77,7 +79,6 @@ public class TextTemplateRenderer implements ApiDocRenderer {
         }
 
         public TextTemplateRenderer build() {
-
             return new TextTemplateRenderer(template, includeTemplates);
         }
     }

@@ -43,12 +43,14 @@ public class ApiDocGenerator {
     }
 
     public void generate(Writer out) throws IOException {
-        ApiDoc apiDoc = parser.parse();
-        renderer.render(apiDoc, out);
+        renderer.render(parseOnly(), out);
     }
 
     public void generate(File outputFile) throws IOException {
-        ApiDoc apiDoc = parser.parse();
-        renderer.render(apiDoc, outputFile);
+        renderer.render(parseOnly(), outputFile);
+    }
+
+    public ApiDoc parseOnly() {
+        return parser.parse();
     }
 }

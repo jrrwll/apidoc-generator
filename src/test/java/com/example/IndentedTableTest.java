@@ -43,6 +43,8 @@ class IndentedTableTest {
         TextTemplateRenderer renderer = TextTemplateRenderer.builder().build();
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
+        System.out.println("--- --- ---   --- --- ---   --- --- ---");
         System.out.println(doc);
+        System.out.println("--- --- ---   --- --- ---   --- --- ---");
     }
 }

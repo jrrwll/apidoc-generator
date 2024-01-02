@@ -7,6 +7,8 @@ import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.SetUtil;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,7 @@ class JsonWithCommentTest {
         generate(srcDir, javaFileDir, basePackages);
     }
 
+
     void generate(String srcDir, String javaFileDir, List<String> basePackages) throws Exception {
         ApiDocParserConfig config = new ApiDocParserConfig();
         config.setBasePackages(basePackages);
@@ -52,7 +55,11 @@ class JsonWithCommentTest {
         config.setMergeInputParam(MergeInputParam.builder().byFlatType(true).build());
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
-        String doc = generator.generate();
+        ApiDoc apiDoc = generator.parseOnly();
+        System.out.println(JsonUtil.toJson(apiDoc));
+        String doc = renderer.render(apiDoc);
+        System.out.println("--- --- ---   --- --- ---   --- --- ---");
         System.out.println(doc);
+        System.out.println("--- --- ---   --- --- ---   --- --- ---");
     }
 }

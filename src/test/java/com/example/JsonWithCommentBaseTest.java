@@ -3,34 +3,24 @@ package com.example;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
-import org.junit.jupiter.api.Test;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 
 /**
  * @author Jerry Will
- * @version 2022-07-12
+ * @version 2022-07-11
  */
-class IndentedTableTest {
+public class JsonWithCommentBaseTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
+    List<String> basePackages = Collections.singletonList("com.example");
 
-    @Test
-    void testController() throws Exception {
-        String javaFileDir = srcDir + "/com/example/controller";
-        List<String> basePackages = Collections.singletonList("com.example");
-        generate(srcDir, javaFileDir, basePackages);
+    JsnoWithCommentRenderer createRenderer() {
+        return new JsnoWithCommentRenderer();
     }
 
-    @Test
-    void testService() throws Exception {
-        String javaFileDir = srcDir + "/com/example/service";
-        List<String> basePackages = Collections.singletonList("com.example");
-        generate(srcDir, javaFileDir, basePackages);
-    }
-
-    void generate(String srcDir, String javaFileDir, List<String> basePackages) throws Exception {
+    ApiDocParserConfig createConfig(String javaFileDir) {
         ApiDocParserConfig config = new ApiDocParserConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
@@ -39,12 +29,15 @@ class IndentedTableTest {
                 "org.springframework.web.multipart.MultipartFile"
         ));
         config.setEnableSpringWeb(true);
+        return config;
+    }
 
-        TextTemplateRenderer renderer = TextTemplateRenderer.builder().build();
+    void generate(ApiDocParserConfig config, JsnoWithCommentRenderer renderer) throws Exception {
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
         System.out.println("--- --- ---   --- --- ---   --- --- ---");
         System.out.println(doc);
         System.out.println("--- --- ---   --- --- ---   --- --- ---");
     }
+
 }

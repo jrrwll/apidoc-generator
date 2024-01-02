@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2022-07-11
  */
-class IndentedTableRendererTest {
+class JsnoWithCommentRendererTest {
 
     @Test
     void test() {

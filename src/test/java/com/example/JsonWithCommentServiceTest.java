@@ -35,8 +35,8 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
         ));
 
         JsnoWithCommentRenderer renderer = createRenderer();
-        renderer.setSeqPrefix("3.2.");
-        renderer.setInputParamTitle("##### - Some Input Params");
+        renderer.setSeqPrefix("5.1.");
+        renderer.setInputParamTitle("- ##### Some Input Params");
         renderer.setOutputParamTitle(null);
         generate(config, renderer);
     }

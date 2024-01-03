@@ -1,9 +1,5 @@
 package com.example;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
@@ -42,6 +38,16 @@ public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
         config.setMergeInputParam(MergeInputParam.builder().byFlatType(true).build());
 
         JsnoWithCommentRenderer renderer = createRenderer();
+        generate(config, renderer);
+    }
+
+    @Test
+    void testOutputParamAsIndentedTable() throws Exception {
+        ApiDocParserConfig config = createConfig(javaFileDir);
+
+        JsnoWithCommentRenderer renderer = createRenderer();
+        renderer.setOutputParamAsIndentedTable(true);
+        renderer.setFieldsNoRequired(true);
         generate(config, renderer);
     }
 }

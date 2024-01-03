@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -27,6 +26,7 @@ import org.dreamcat.common.util.ReflectUtil;
 public class ApiDocParserConfig {
 
     // parser
+    private boolean verbose;
     private List<String> basePackages = Collections.singletonList(""); // java files dirs
     private List<String> srcDirs; // source dir
     private List<String> javaFileDirs; // service class dir
@@ -58,10 +58,10 @@ public class ApiDocParserConfig {
 
         // set default
         if (enableSpringWeb && http == null) {
-            tryToRun(() -> this.http = springWeb(classLoader));
+            this.http = springWeb();
         }
         if (validation == null) {
-            tryToRun(() -> this.validation = validation(classLoader));
+            tryToRun(() -> this.validation = validation());
         }
     }
 
@@ -98,25 +98,24 @@ public class ApiDocParserConfig {
     @Data
     public static class Http {
 
-        private Class<? extends Annotation> path;
-        private Function<Annotation, List<String>> pathGetter;
-
-        private Class<? extends Annotation> action;
-        private Function<Annotation, List<String>> actionGetter;
-
-        private Class<? extends Annotation> pathVar;
-        private Function<Annotation, String> pathVarGetter;
-
-        private Class<? extends Annotation> required;
-        private Function<Annotation, Boolean> requiredGetter;
+        private String pathAnno;
+        @Builder.Default
+        private List<String> pathGetter = Arrays.asList("path", "value"); // string or string[]
+        private String actionAnno;
+        private List<String> actionGetter; // string or string[] or Enum[]
+        private String pathVarAnno;
+        private List<String> pathVarGetter = Arrays.asList("name", "value"); // string
+        private String requiredAnno;
+        @Builder.Default
+        private List<String> requiredGetter = Collections.singletonList("required"); // boolean
     }
 
     @Data
     public static class Validation {
 
-        private Class<? extends Annotation> notNull;
-        private Class<? extends Annotation> notEmpty;
-        private Class<? extends Annotation> notBlank;
+        private String notNullAnno;
+        private String notEmptyAnno;
+        private String notBlankAnno;
     }
 
     @Data
@@ -147,6 +146,23 @@ public class ApiDocParserConfig {
         }
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FunctionDoc {
+
+        private String docAnno;
+        @Builder.Default
+        private List<String> docCommentGetter = Arrays.asList("comment", "description");
+        @Builder.Default
+        private List<String> docNestedParamGetter = Arrays.asList("params", "parameters");
+        @Builder.Default
+        private List<String> docNestedParamNameGetter = Collections.singletonList("name");
+        @Builder.Default
+        private List<String> docNestedParamCommentGetter = Arrays.asList("comment", "description");
+    }
+
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
     private void tryToRun(VoidConsumer... cbs) {
@@ -158,28 +174,22 @@ public class ApiDocParserConfig {
         }
     }
 
-    private Http springWeb(ClassLoader classLoader) {
+    private Http springWeb() {
         Http h = new Http();
-        h.setPath(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", classLoader));
-        h.setPathGetter(ApiDocParserConfig::requestMappingPath);
-        h.setAction(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestMapping", classLoader));
-        h.setActionGetter(ApiDocParserConfig::requestMappingMethod);
-        h.setRequired(ReflectUtil.forName("org.springframework.web.bind.annotation.RequestParam", classLoader));
-        h.setRequiredGetter(ApiDocParserConfig::requestParamRequired);
-        h.setPathVar(ReflectUtil.forName("org.springframework.web.bind.annotation.PathVariable", classLoader));
-        h.setPathVarGetter(ApiDocParserConfig::pathVariablePathVar);
+        h.setPathAnno("org.springframework.web.bind.annotation.RequestMapping");
+        h.setActionAnno("org.springframework.web.bind.annotation.RequestMapping");
+        h.setActionGetter(Collections.singletonList("method"));
+        h.setRequiredAnno("org.springframework.web.bind.annotation.RequestParam");
+        h.setPathVarAnno("org.springframework.web.bind.annotation.PathVariable");
         return h;
     }
 
-    private Validation validation(ClassLoader classLoader) {
+    private Validation validation() {
         Validation v = new Validation();
-        v.setNotNull(ReflectUtil.forName("javax.validation.constraints.NotNull", classLoader));
-        v.setNotEmpty(ReflectUtil.forName("javax.validation.constraints.NotEmpty", classLoader));
-        try {
-            // javax-validation 1.0 has no NotBlank
-            v.setNotBlank(ReflectUtil.forName("javax.validation.constraints.NotBlank", classLoader));
-        } catch (Exception ignore) {
-        }
+        v.setNotNullAnno("javax.validation.constraints.NotNull");
+        v.setNotEmptyAnno("javax.validation.constraints.NotEmpty");
+        // javax-validation 1.0 has no NotBlank
+        v.setNotBlankAnno("javax.validation.constraints.NotBlank");
         return v;
     }
 

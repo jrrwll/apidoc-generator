@@ -59,13 +59,13 @@ public class ApiParamFieldParser {
     private boolean getApiParamFieldRequired(Field field) {
         Validation validation = config.getValidation();
         if (validation != null) {
-            if (field.getAnnotation(validation.getNotNull()) != null ||
-                    field.getAnnotation(validation.getNotEmpty()) != null) {
+            if (field.getAnnotation(validation.getNotNullAnno()) != null ||
+                    field.getAnnotation(validation.getNotEmptyAnno()) != null) {
                 return true;
             }
-            if (validation.getNotBlank() != null) {
+            if (validation.getNotBlankAnno() != null) {
                 // use validation 2.0+
-                if (field.getAnnotation(validation.getNotBlank()) != null) {
+                if (field.getAnnotation(validation.getNotBlankAnno()) != null) {
                     return true;
                 }
             }

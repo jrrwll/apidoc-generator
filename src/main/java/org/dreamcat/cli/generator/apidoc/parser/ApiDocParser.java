@@ -2,10 +2,13 @@ package org.dreamcat.cli.generator.apidoc.parser;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -171,10 +174,10 @@ public class ApiDocParser {
 
     private List<String> parseMethodPath(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
         Http http = config.getHttp();
-        if (http == null || http.getPath() == null) return null;
+        if (http == null || http.getPathAnno() == null) return null;
 
-        Annotation pathAnn = ReflectUtil.retrieveAnnotation(method, http.getPath());
-        Annotation basePathAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getPath());
+        Annotation pathAnn = ReflectUtil.retrieveAnnotation(method, http.getPathAnno());
+        Annotation basePathAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getPathAnno());
         List<String> path = null, basePath = null;
         if (pathAnn != null) path = http.getPathGetter().apply(pathAnn);
         if (basePathAnn != null) basePath = http.getPathGetter().apply(basePathAnn);
@@ -192,15 +195,18 @@ public class ApiDocParser {
 
     private List<String> parseMethodAction(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
         Http http = config.getHttp();
-        if (http == null || http.getAction() == null) return null;
+        if (http == null || ObjectUtil.isEmpty(http.getActionAnno())) return null;
 
-        Annotation actionAnn = ReflectUtil.retrieveAnnotation(method, http.getAction());
-        if (actionAnn != null) {
-            List<String> action = http.getActionGetter().apply(actionAnn);
-            if (action != null) return action;
+        Object action = retrieveAndInvokeAnnotation(method, http.getActionAnno(), http.getActionGetter());
+        if (action != null) {
+            if (action instanceof String) {
+                return Collections.singletonList(action.toString());
+            } else {
+                return Arrays.asList((String[])action);
+            }
         }
 
-        Annotation baseActionAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getAction());
+        Annotation baseActionAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getActionAnno());
         if (baseActionAnn == null) return null;
         return http.getActionGetter().apply(baseActionAnn);
     }
@@ -270,17 +276,18 @@ public class ApiDocParser {
 
     private Boolean parseParameterRequired(Parameter parameter) {
         Http http = config.getHttp();
-        if (http != null && http.getRequired() != null) {
-            Annotation ann = ReflectUtil.retrieveAnnotation(parameter, http.getRequired());
-            if (ann != null) {
-                return http.getRequiredGetter().apply(ann);
+        if (http != null && ObjectUtil.isNotEmpty(http.getRequiredAnno())) {
+            Object required = retrieveAndInvokeAnnotation(parameter,
+                    http.getRequiredAnno(), http.getRequiredGetter());
+            if (required != null) {
+                return Objects.equals(required, true);
             }
         }
         Validation validation = config.getValidation();
         if (config.getValidation() != null) {
-            if (ReflectUtil.retrieveAnnotation(parameter, validation.getNotNull()) != null ||
-                    ReflectUtil.retrieveAnnotation(parameter, validation.getNotEmpty()) != null ||
-                    ReflectUtil.retrieveAnnotation(parameter, validation.getNotBlank()) != null) {
+            if (retrieveAnnotation(parameter, validation.getNotNullAnno()) != null ||
+                    retrieveAnnotation(parameter, validation.getNotEmptyAnno()) != null ||
+                    retrieveAnnotation(parameter, validation.getNotBlankAnno()) != null) {
                 return true;
             }
         }
@@ -289,17 +296,59 @@ public class ApiDocParser {
 
     private String parseParameterPathVar(Parameter parameter) {
         Http http = config.getHttp();
-        if (http == null || http.getPathVar() == null) return null;
-        Annotation ann = ReflectUtil.retrieveAnnotation(parameter, http.getPathVar());
-        if (ann != null) {
-            return http.getPathVarGetter().apply(ann);
-        }
-        return null;
+        if (http == null || ObjectUtil.isEmpty(http.getPathVarAnno())) return null;
+        Object pathVar = retrieveAndInvokeAnnotation(parameter, http.getPathVarAnno(), http.getPathVarGetter());
+        if (pathVar == null) return null;
+        return pathVar.toString();
     }
 
     private String toJSONWithComment(ObjectType type) {
         ObjectRandomGenerator randomGenerator = new ObjectRandomGenerator();
         Object bean = randomGenerator.generate(type);
         return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
+    }
+
+    private Object retrieveAndInvokeAnnotation(AnnotatedElement parameter, String anno, String method) {
+        return retrieveAndInvokeAnnotation(parameter, anno, Collections.singletonList(method));
+    }
+
+    private Object retrieveAndInvokeAnnotation(AnnotatedElement parameter, String anno, List<String> methods) {
+        Annotation annoObj = retrieveAnnotation(parameter, anno);
+        if (annoObj == null) return null;
+        return invokeAnnotationMethod(annoObj, methods);
+    }
+
+    private Annotation retrieveAnnotation(AnnotatedElement element, String anno) {
+        try {
+            Class<? extends Annotation> annoClass = ReflectUtil.forNameOrThrow(anno, classLoader);
+            if (element instanceof Parameter) {
+                return ReflectUtil.retrieveAnnotation((Parameter) element, annoClass);
+            } else if (element instanceof Method) {
+                return ReflectUtil.retrieveAnnotation((Method) element, annoClass);
+            } else {
+                return ReflectUtil.retrieveAnnotation((Class<?>) element, annoClass);
+            }
+        } catch (ClassNotFoundException e) {
+            if (config.isVerbose()) {
+                log.error("failed to find annotation on {}: {}", element, e.getMessage());
+            }
+            return null;
+        }
+    }
+
+    private Object invokeAnnotationMethod(Annotation anno, String method) {
+        return invokeAnnotationMethod(anno, Collections.singletonList(method));
+    }
+
+    private Object invokeAnnotationMethod(Annotation anno, List<String> methods) {
+        for (String method : methods) {
+            Object value = ReflectUtil.invoke(anno, method);
+            if (value == null) continue;
+            if (value.getClass().isArray() && Array.getLength(value) == 0) {
+                continue;
+            }
+            return value;
+        }
+        return null;
     }
 }

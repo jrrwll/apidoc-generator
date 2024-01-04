@@ -13,8 +13,6 @@ public class ApiParamField {
     private String name;
     private String comment = "";
     private String typeName;
-
-    private boolean required;
-
+    private Boolean required;
     private List<ApiParamField> fields;
 }

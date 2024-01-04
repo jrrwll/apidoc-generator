@@ -58,7 +58,7 @@ class TextTemplateTest {
         config.setIgnoreInputParamTypes(Collections.singleton(
                 "org.springframework.web.multipart.MultipartFile"
         ));
-        config.setEnableSpringWeb(true);
+        config.setAutoDetect(true);
 
         TextTemplateRenderer renderer = new TextTemplateRenderer(template, includeTemplates);
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);

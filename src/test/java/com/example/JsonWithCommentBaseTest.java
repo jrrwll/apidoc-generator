@@ -28,7 +28,7 @@ public class JsonWithCommentBaseTest {
         config.setIgnoreInputParamTypes(Collections.singleton(
                 "org.springframework.web.multipart.MultipartFile"
         ));
-        config.setEnableSpringWeb(true);
+        config.setAutoDetect(true);
         return config;
     }
 

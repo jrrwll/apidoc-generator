@@ -8,10 +8,12 @@ import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.common.json.JSONWithComment;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
@@ -50,9 +52,37 @@ class BaseParser {
         return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
     }
 
-    Object retrieveAndInvokeAnnotation(AnnotatedElement parameter, String anno, List<String> methods) {
+    Boolean isValidationRequired(AnnotatedElement element) {
+        List<Validation> validation = config.getValidation();
+        if (ObjectUtil.isEmpty(validation)) return null;
+        for (Validation v : validation) {
+            if (retrieveAnnotation(element, v.getNotNullAnno()) != null ||
+                    retrieveAnnotation(element, v.getNotEmptyAnno()) != null ||
+                    retrieveAnnotation(element, v.getNotBlankAnno()) != null) {
+                return true;
+            }
+        }
+        return null;
+    }
+
+    <T> Object retrieveAndInvokeAnnotation(AnnotatedElement element, List<T> configObjs,
+            Function<T, String> anno, Function<T, List<String>> methods) {
+        if (ObjectUtil.isEmpty(configObjs)) return null;
+        for (T configObj : configObjs) {
+            String annoName = anno.apply(configObj);
+            if (ObjectUtil.isNotEmpty(annoName)) continue;
+            List<String> methodNames = methods.apply(configObj);
+            if (ObjectUtil.isNotEmpty(methodNames)) continue;
+
+            Object value = retrieveAndInvokeAnnotation(element, annoName, methodNames);
+            if (value != null) return value;
+        }
+        return null;
+    }
+
+    Object retrieveAndInvokeAnnotation(AnnotatedElement element, String anno, List<String> methods) {
         if (ObjectUtil.isEmpty(methods)) return null;
-        Annotation annoObj = retrieveAnnotation(parameter, anno);
+        Annotation annoObj = retrieveAnnotation(element, anno);
         if (annoObj == null) return null;
 
         for (String method : methods) {

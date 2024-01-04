@@ -15,7 +15,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
@@ -122,9 +121,9 @@ public class ApiDocParser extends BaseParser {
         apiFunction.setServiceName(serviceType.getName());
         apiFunction.setComment(methodDef.getComment());
 
-        if (config.getHttp() != null) {
-            apiFunction.setPath(parseMethodPath(methodDef, method, serviceType));
-            apiFunction.setAction(parseMethodAction(methodDef, method, serviceType));
+        if (ObjectUtil.isNotEmpty(config.getHttp())) {
+            apiFunction.setPath(parseMethodPath(method, serviceType));
+            apiFunction.setAction(parseMethodAction(method, serviceType));
         }
 
         // output
@@ -149,15 +148,18 @@ public class ApiDocParser extends BaseParser {
             apiFunction.setInputParams(parseInputParams(methodDef, objectParameters));
         }
         apiFunction.setInputParamCount(apiFunction.getInputParams().size());
+
+        // handle extra anno
+        if (ObjectUtil.isNotEmpty(config.getFunctionAnno())) {
+
+        }
         return apiFunction;
     }
 
-    private List<String> parseMethodPath(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
-        Http http = config.getHttp();
-        if (http == null || ObjectUtil.isEmpty(http.getPathAnno())) return null;
-
-        Object pathAnn = retrieveAndInvokeAnnotation(method, http.getPathAnno(), http.getPathGetter());
-        Object basePathAnn = retrieveAndInvokeAnnotation(serviceType, http.getPathAnno(), http.getPathGetter());
+    private List<String> parseMethodPath(Method method, Class<?> serviceType) {
+        List<Http> http = config.getHttp();
+        Object pathAnn = retrieveAndInvokeAnnotation(method, http, Http::getPathAnno, Http::getPathGetter);
+        Object basePathAnn = retrieveAndInvokeAnnotation(serviceType, http, Http::getPathAnno, Http::getPathGetter);
 
         List<String> path = null, basePath = null;
         if (pathAnn != null) path = annoValueToStringList(pathAnn);
@@ -174,16 +176,16 @@ public class ApiDocParser extends BaseParser {
         }
     }
 
-    private List<String> parseMethodAction(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
-        Http http = config.getHttp();
-        if (http == null || ObjectUtil.isEmpty(http.getActionAnno())) return null;
-
-        Object action = retrieveAndInvokeAnnotation(method, http.getActionAnno(), http.getActionGetter());
+    private List<String> parseMethodAction(Method method, Class<?> serviceType) {
+        List<Http> http = config.getHttp();
+        Object action = retrieveAndInvokeAnnotation(method, http,
+                Http::getActionAnno, Http::getActionGetter);
         if (action != null) {
             return annoValueToStringList(action);
         }
 
-        Object baseAction = retrieveAndInvokeAnnotation(serviceType, http.getActionAnno(), http.getActionGetter());
+        Object baseAction = retrieveAndInvokeAnnotation(serviceType, http,
+                Http::getActionAnno, Http::getActionGetter);
         if (baseAction == null) return null;
         return annoValueToStringList(baseAction);
     }
@@ -243,7 +245,7 @@ public class ApiDocParser extends BaseParser {
             paramField.setFields(apiParamFieldParser.resolveParamField(
                     objectParameter.getType()));
 
-            paramField.setRequired(Objects.equals(true, parseParameterRequired(parameter)));
+            paramField.setRequired(parseParameterRequired(parameter));
 
             paramFields.add(paramField);
         }
@@ -252,29 +254,17 @@ public class ApiDocParser extends BaseParser {
     }
 
     private Boolean parseParameterRequired(Parameter parameter) {
-        Http http = config.getHttp();
-        if (http != null && ObjectUtil.isNotEmpty(http.getRequiredAnno())) {
-            Object required = retrieveAndInvokeAnnotation(parameter,
-                    http.getRequiredAnno(), http.getRequiredGetter());
-            if (required != null) {
-                return Objects.equals(required, true);
-            }
+        Object required = retrieveAndInvokeAnnotation(parameter, config.getHttp(),
+                Http::getRequiredAnno, Http::getRequiredGetter);
+        if (required != null) {
+            return Objects.equals(required, true);
         }
-        Validation validation = config.getValidation();
-        if (validation != null) {
-            if (retrieveAnnotation(parameter, validation.getNotNullAnno()) != null ||
-                    retrieveAnnotation(parameter, validation.getNotEmptyAnno()) != null ||
-                    retrieveAnnotation(parameter, validation.getNotBlankAnno()) != null) {
-                return true;
-            }
-        }
-        return null;
+        return isValidationRequired(parameter);
     }
 
     private String parseParameterPathVar(Parameter parameter) {
-        Http http = config.getHttp();
-        if (http == null || ObjectUtil.isEmpty(http.getPathVarAnno())) return null;
-        Object pathVar = retrieveAndInvokeAnnotation(parameter, http.getPathVarAnno(), http.getPathVarGetter());
+        Object pathVar = retrieveAndInvokeAnnotation(parameter, config.getHttp(),
+                Http::getPathVarAnno, Http::getPathVarGetter);
         if (pathVar == null) return null;
         return pathVar.toString();
     }

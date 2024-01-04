@@ -28,7 +28,7 @@ class SwaggerTest {
         config.setIgnoreInputParamTypes(Collections.singleton(
                 "org.springframework.web.multipart.MultipartFile"
         ));
-        config.setEnableSpringWeb(true);
+        config.setAutoDetect(true);
 
         SwaggerRenderer renderer = new SwaggerRenderer();
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);

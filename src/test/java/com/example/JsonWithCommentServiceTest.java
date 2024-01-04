@@ -51,7 +51,7 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
     @Test
     void testMergeInput() throws Exception {
         ApiDocParserConfig config = createConfig(javaFileDir);
-        config.setMergeInputParam(MergeInputParam.builder().byFlatType(true).build());
+        config.setMergeInputParam(MergeInputParam.flatType());
 
         JsnoWithCommentRenderer renderer = createRenderer();
         generate(config, renderer);

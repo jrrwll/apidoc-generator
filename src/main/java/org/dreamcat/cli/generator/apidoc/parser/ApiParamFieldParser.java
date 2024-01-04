@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectField;
@@ -46,8 +45,7 @@ public class ApiParamFieldParser extends BaseParser {
             paramField.setName(fieldDef.getName());
             paramField.setComment(fieldDef.getComment());
             paramField.setTypeName(field.getType().getSimpleName());
-
-            paramField.setRequired(getApiParamFieldRequired(field));
+            paramField.setRequired(isValidationRequired(field));
 
             List<ApiParamField> fields = resolveParamField(objectField.getType());
             paramField.setFields(fields);
@@ -55,16 +53,6 @@ public class ApiParamFieldParser extends BaseParser {
             paramFields.add(paramField);
         }
         return paramFields;
-    }
-
-    private boolean getApiParamFieldRequired(Field field) {
-        Validation validation = apiDocParser.config.getValidation();
-        if (validation != null) {
-            return retrieveAnnotation(field, validation.getNotNullAnno()) != null ||
-                    retrieveAnnotation(field, validation.getNotEmptyAnno()) != null ||
-                    retrieveAnnotation(field, validation.getNotBlankAnno()) != null;
-        }
-        return false;
     }
 
     public void clear() {

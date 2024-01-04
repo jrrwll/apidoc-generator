@@ -174,13 +174,14 @@ public class ApiDocParser {
 
     private List<String> parseMethodPath(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
         Http http = config.getHttp();
-        if (http == null || http.getPathAnno() == null) return null;
+        if (http == null || ObjectUtil.isEmpty(http.getPathAnno())) return null;
 
-        Annotation pathAnn = ReflectUtil.retrieveAnnotation(method, http.getPathAnno());
-        Annotation basePathAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getPathAnno());
+        Object pathAnn = retrieveAndInvokeAnnotation(method, http.getPathAnno(), http.getPathGetter());
+        Object basePathAnn = retrieveAndInvokeAnnotation(serviceType, http.getPathAnno(), http.getPathGetter());
+
         List<String> path = null, basePath = null;
-        if (pathAnn != null) path = http.getPathGetter().apply(pathAnn);
-        if (basePathAnn != null) basePath = http.getPathGetter().apply(basePathAnn);
+        if (pathAnn != null) path = annoValueToStringList(pathAnn);
+        if (basePathAnn != null) basePath = annoValueToStringList(basePathAnn);
 
         if (basePath != null && path != null) {
             return PathUtil.crossJoin(basePath, path);
@@ -199,16 +200,12 @@ public class ApiDocParser {
 
         Object action = retrieveAndInvokeAnnotation(method, http.getActionAnno(), http.getActionGetter());
         if (action != null) {
-            if (action instanceof String) {
-                return Collections.singletonList(action.toString());
-            } else {
-                return Arrays.asList((String[])action);
-            }
+            return annoValueToStringList(action);
         }
 
-        Annotation baseActionAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getActionAnno());
-        if (baseActionAnn == null) return null;
-        return http.getActionGetter().apply(baseActionAnn);
+        Object baseAction = retrieveAndInvokeAnnotation(serviceType, http.getActionAnno(), http.getActionGetter());
+        if (baseAction == null) return null;
+        return annoValueToStringList(baseAction);
     }
 
     private List<ApiInputParam> parseInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
@@ -351,4 +348,14 @@ public class ApiDocParser {
         }
         return null;
     }
+
+    private List<String> annoValueToStringList(Object anno) {
+        if (anno instanceof String) {
+            return Collections.singletonList(anno.toString());
+        } else {
+            return Arrays.stream((Object[])anno)
+                    .map(Object::toString).collect(Collectors.toList());
+        }
+    }
+
 }

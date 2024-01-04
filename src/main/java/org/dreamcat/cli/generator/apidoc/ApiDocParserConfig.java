@@ -152,15 +152,15 @@ public class ApiDocParserConfig {
     @AllArgsConstructor
     public static class FunctionDoc {
 
-        private String docAnno;
+        private String anno;
         @Builder.Default
-        private List<String> docCommentGetter = Arrays.asList("comment", "description");
+        private List<String> commentGetter = Arrays.asList("comment", "description");
         @Builder.Default
-        private List<String> docNestedParamGetter = Arrays.asList("params", "parameters");
+        private List<String> nestedParamGetter = Arrays.asList("params", "parameters");
         @Builder.Default
-        private List<String> docNestedParamNameGetter = Collections.singletonList("name");
+        private List<String> nestedParamNameGetter = Collections.singletonList("name");
         @Builder.Default
-        private List<String> docNestedParamCommentGetter = Arrays.asList("comment", "description");
+        private List<String> nestedParamCommentGetter = Arrays.asList("comment", "description");
     }
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====

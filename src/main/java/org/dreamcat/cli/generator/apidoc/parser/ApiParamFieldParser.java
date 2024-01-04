@@ -5,11 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.RequiredArgsConstructor;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
-import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectField;
 import org.dreamcat.common.reflect.ObjectType;
@@ -18,11 +15,15 @@ import org.dreamcat.common.reflect.ObjectType;
  * @author Jerry Will
  * @version 2022-07-11
  */
-@RequiredArgsConstructor
-public class ApiParamFieldParser {
+public class ApiParamFieldParser extends BaseParser {
 
-    final ApiDocParserConfig config;
-    final CommentJavaParser commentJavaParser;
+    final ApiDocParser apiDocParser;
+
+    public ApiParamFieldParser(ApiDocParser apiDocParser) {
+        super(apiDocParser.config, apiDocParser.classLoader,
+                apiDocParser.randomGenerator, apiDocParser.commentJavaParser);
+        this.apiDocParser = apiDocParser;
+    }
 
     private final Map<ObjectType, List<ApiParamField>> paramFieldCache = new ConcurrentHashMap<>();
 
@@ -39,7 +40,7 @@ public class ApiParamFieldParser {
         List<ApiParamField> paramFields = new ArrayList<>(fieldMap.size());
         for (ObjectField objectField : fieldMap.values()) {
             Field field = objectField.getField();
-            CommentFieldDef fieldDef = commentJavaParser.resolveField(field);
+            CommentFieldDef fieldDef = apiDocParser.commentJavaParser.resolveField(field);
 
             ApiParamField paramField = new ApiParamField();
             paramField.setName(fieldDef.getName());
@@ -57,18 +58,11 @@ public class ApiParamFieldParser {
     }
 
     private boolean getApiParamFieldRequired(Field field) {
-        Validation validation = config.getValidation();
+        Validation validation = apiDocParser.config.getValidation();
         if (validation != null) {
-            if (field.getAnnotation(validation.getNotNullAnno()) != null ||
-                    field.getAnnotation(validation.getNotEmptyAnno()) != null) {
-                return true;
-            }
-            if (validation.getNotBlankAnno() != null) {
-                // use validation 2.0+
-                if (field.getAnnotation(validation.getNotBlankAnno()) != null) {
-                    return true;
-                }
-            }
+            return retrieveAnnotation(field, validation.getNotNullAnno()) != null ||
+                    retrieveAnnotation(field, validation.getNotEmptyAnno()) != null ||
+                    retrieveAnnotation(field, validation.getNotBlankAnno()) != null;
         }
         return false;
     }

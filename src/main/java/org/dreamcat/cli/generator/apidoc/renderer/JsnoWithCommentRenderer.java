@@ -3,6 +3,7 @@ package org.dreamcat.cli.generator.apidoc.renderer;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Objects;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
@@ -185,7 +186,7 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer{
         out.write(field.getTypeName());
         if (!fieldsNoRequired) {
             out.write(" | ");
-            out.write(field.isRequired() ? requiredTrue : requiredFalse);
+            out.write(Objects.equals(field.getRequired(), true) ? requiredTrue : requiredFalse);
         }
         out.write(" | ");
         out.write(field.getComment());

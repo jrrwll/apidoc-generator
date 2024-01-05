@@ -16,6 +16,8 @@ public class ApiInputParam {
 
     private String name;
     private String comment;
+    private String fieldName; // java param/field name
+    private String fieldType; // java class name
     private ObjectType type;
 
     private Boolean required; // required by request param or validation

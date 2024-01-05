@@ -3,28 +3,29 @@ package org.dreamcat.cli.generator.apidoc.parser;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FunctionDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
-import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.io.PathUtil;
+import org.dreamcat.common.json.JSONWithComment;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
@@ -39,16 +40,29 @@ import org.dreamcat.common.util.ReflectUtil;
 @Slf4j
 public class ApiDocParser extends BaseParser {
 
+    final CommentJavaParser commentJavaParser;
     final ApiParamParser apiParamParser;
+    final ObjectRandomGenerator randomGenerator;
 
     public ApiDocParser(ApiDocParserConfig config) {
-        this(config, null, new ObjectRandomGenerator());
+        this(config, (ClassLoader)null);
     }
 
-    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
-        super(config, classLoader, randomGenerator);
-        // this.config.afterPropertySet(classLoader);
+    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader) {
+        this(config, classLoader, new ObjectRandomGenerator());
+    }
+
+    public ApiDocParser(ApiDocParserConfig config, ObjectRandomGenerator randomGenerator) {
+        this(config, null, randomGenerator);
+    }
+
+    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader,
+            ObjectRandomGenerator randomGenerator) {
+        super(config, classLoader);
+        this.config.afterPropertySet(classLoader);
+        this.commentJavaParser = new CommentJavaParser(config);
         this.apiParamParser = new ApiParamParser(this);
+        this.randomGenerator = randomGenerator;
     }
 
     @SneakyThrows
@@ -144,20 +158,20 @@ public class ApiDocParser extends BaseParser {
         apiFunction.setInputParamCount(apiFunction.getInputParams().size());
 
         // handle extra anno
-        if (ObjectUtil.isNotEmpty(config.getFunctionAnno())) {
-
+        if (ObjectUtil.isNotEmpty(config.getFunctionDoc())) {
+            parseFunctionDoc(method, apiFunction);
         }
         return apiFunction;
     }
 
     private List<String> parseMethodPath(Method method, Class<?> serviceType) {
         List<Http> http = config.getHttp();
-        Object pathAnn = retrieveAndInvokeAnnotation(method, http, Http::getPathAnno, Http::getPathGetter);
-        Object basePathAnn = retrieveAndInvokeAnnotation(serviceType, http, Http::getPathAnno, Http::getPathGetter);
+        Object pathAnn = findAndInvokeAnno(method, http, Http::getPath, Http::getPathMethod);
+        Object basePathAnn = findAndInvokeAnno(serviceType, http, Http::getPath, Http::getPathMethod);
 
         List<String> path = null, basePath = null;
-        if (pathAnn != null) path = annoValueToStringList(pathAnn);
-        if (basePathAnn != null) basePath = annoValueToStringList(basePathAnn);
+        if (pathAnn != null) path = annoValueToStrs(pathAnn);
+        if (basePathAnn != null) basePath = annoValueToStrs(basePathAnn);
 
         if (basePath != null && path != null) {
             return PathUtil.crossJoin(basePath, path);
@@ -172,15 +186,58 @@ public class ApiDocParser extends BaseParser {
 
     private List<String> parseMethodAction(Method method, Class<?> serviceType) {
         List<Http> http = config.getHttp();
-        Object action = retrieveAndInvokeAnnotation(method, http,
-                Http::getActionAnno, Http::getActionGetter);
+        Object action = findAndInvokeAnno(method, http,
+                Http::getAction, Http::getActionMethod);
         if (action != null) {
-            return annoValueToStringList(action);
+            return annoValueToStrs(action);
         }
 
-        Object baseAction = retrieveAndInvokeAnnotation(serviceType, http,
-                Http::getActionAnno, Http::getActionGetter);
+        Object baseAction = findAndInvokeAnno(serviceType, http,
+                Http::getAction, Http::getActionMethod);
         if (baseAction == null) return null;
-        return annoValueToStringList(baseAction);
+        return annoValueToStrs(baseAction);
+    }
+
+    private void parseFunctionDoc(Method method, ApiFunction apiFunction) {
+        for (FunctionDoc funDoc : config.getFunctionDoc()) {
+            Object annoObj = findAnno(method, funDoc.getName());
+            if (annoObj == null) continue;
+            // function comment
+            Object comment = invokeAnno(annoObj, funDoc.getCommentMethod());
+            if (comment != null) {
+                apiFunction.setComment(comment.toString());
+            }
+
+            Object paramsObj = invokeAnno(annoObj, funDoc.getNestedParamMethod());
+            if (paramsObj == null) continue;
+            Object[] params = paramsObj instanceof Object[] ?
+                    (Object[]) paramsObj : new Object[]{paramsObj};
+            Map<String, Pair<Object, Object>> paramMap = new HashMap<>();
+            for (Object param : params) {
+                Object paramName = invokeAnno(param, funDoc.getNestedParamNameMethod());
+                if (paramName == null) continue;
+                Object paramComment = invokeAnno(param, funDoc.getNestedParamCommentMethod());
+                Object paramRequired = invokeAnno(param, funDoc.getNestedParamRequiredMethod());
+                if (paramComment != null || paramRequired != null) {
+                    paramMap.put(paramName.toString(), Pair.of(paramComment, paramRequired));
+                }
+            }
+            if (paramMap.isEmpty()) continue;
+            for (ApiInputParam inputParam : apiFunction.getInputParams()) {
+                Pair<Object, Object> pair = paramMap.get(inputParam.getName());
+                if (pair == null) continue;
+                if (pair.hasFirst()) {
+                    inputParam.setComment(pair.first().toString());
+                }
+                if (pair.hasSecond()) {
+                    inputParam.setRequired(Objects.equals(pair.second(), true));
+                }
+            }
+        }
+    }
+
+    String toJSONWithComment(ObjectType type) {
+        Object bean = randomGenerator.generate(type);
+        return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
     }
 }

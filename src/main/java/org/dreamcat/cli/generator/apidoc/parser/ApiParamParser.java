@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
@@ -16,32 +17,31 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectType;
+import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
  * @version 2024-01-04
  */
-public class ApiParamParser extends BaseParser {
+class ApiParamParser extends BaseParser {
 
     final ApiDocParser apiDocParser;
     final ApiParamFieldParser apiParamFieldParser;
 
     public ApiParamParser(ApiDocParser apiDocParser) {
-        super(apiDocParser.config, apiDocParser.classLoader,
-                apiDocParser.randomGenerator, apiDocParser.commentJavaParser);
+        super(apiDocParser.config, apiDocParser.classLoader);
         this.apiDocParser = apiDocParser;
         this.apiParamFieldParser = new ApiParamFieldParser(apiDocParser);
     }
 
     public ApiOutputParam parseOutputParam(CommentMethodDef methodDef, Method method) {
         ObjectMethod objectMethod = ObjectMethod.fromMethod(method);
-        List<ObjectParameter> objectParameters = objectMethod.getParameters();
         ObjectType returnType = objectMethod.getReturnType();
         ApiOutputParam outputParam = new ApiOutputParam();
         outputParam.setType(returnType);
         outputParam.setComment(methodDef.getReturnComment());
         // extra info
-        outputParam.setJsonWithComment(toJSONWithComment(returnType));
+        outputParam.setJsonWithComment(apiDocParser.toJSONWithComment(returnType));
         outputParam.setFields(apiParamFieldParser.resolveParamField(returnType));
         return outputParam;
     }
@@ -68,11 +68,14 @@ public class ApiParamParser extends BaseParser {
         apiParam.setTypeName(type.getType().getSimpleName());
         apiParam.setName(parameter.getName());
         apiParam.setComment(parameter.getComment());
-        apiParam.setJsonWithComment(toJSONWithComment(type));
+        apiParam.setFieldName(parameter.getName());
+        apiParam.setFieldType(type.getType().getName());
+        apiParam.setJsonWithComment(apiDocParser.toJSONWithComment(type));
         apiParam.setFields(apiParamFieldParser.resolveParamField(type));
 
+        parseFieldDoc(objectParameter.getParameter(), apiParam);
+        // http/validation has high priority
         apiParam.setRequired(parseParameterRequired(objectParameter.getParameter()));
-
         if (config.getHttp() != null) {
             apiParam.setPathVar(parseParameterPathVar(objectParameter.getParameter()));
         }
@@ -110,8 +113,8 @@ public class ApiParamParser extends BaseParser {
     }
 
     private Boolean parseParameterRequired(Parameter parameter) {
-        Object required = retrieveAndInvokeAnnotation(parameter, config.getHttp(),
-                Http::getRequiredAnno, Http::getRequiredGetter);
+        Object required = findAndInvokeAnno(parameter, config.getHttp(),
+                Http::getRequired, Http::getRequiredMethod);
         if (required != null) {
             return Objects.equals(required, true);
         }
@@ -119,9 +122,23 @@ public class ApiParamParser extends BaseParser {
     }
 
     private String parseParameterPathVar(Parameter parameter) {
-        Object pathVar = retrieveAndInvokeAnnotation(parameter, config.getHttp(),
-                Http::getPathVarAnno, Http::getPathVarGetter);
+        Object pathVar = findAndInvokeAnno(parameter, config.getHttp(),
+                Http::getPathVar, Http::getPathVarMethod);
         if (pathVar == null) return null;
         return pathVar.toString();
+    }
+
+    private void parseFieldDoc(Parameter parameter, ApiInputParam apiParam) {
+        for (FieldDoc fieldDoc : config.getFieldDoc()) {
+            Object annoObj = findAnno(parameter, fieldDoc.getName());
+            if (annoObj == null) continue;
+
+            Object name = invokeAnno(annoObj, fieldDoc.getNameMethod());
+            if (name != null) apiParam.setName(name.toString());
+            Object comment = invokeAnno(annoObj, fieldDoc.getCommentMethod());
+            if (comment != null) apiParam.setComment(comment.toString());
+            Object required = invokeAnno(annoObj, fieldDoc.getRequiredMethod());
+            if (required != null) apiParam.setRequired(Objects.equals(required, true));
+        }
     }
 }

@@ -2,7 +2,6 @@ package org.dreamcat.cli.generator.apidoc;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,8 +34,8 @@ public class ApiDocParserConfig {
     private List<Http> http; // http annotations
     private List<Validation> validation; // auto detect javax-validation
     // other annotations
-    private List<FunctionAnno> functionAnno; // annotation for method
-    private List<ParamAnno> paramAnno; // annotation for param or field
+    private List<FunctionDoc> functionDoc; // annotation for method
+    private List<FieldDoc> fieldDoc; // annotation for param or field
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
@@ -54,8 +53,8 @@ public class ApiDocParserConfig {
             if (ObjectUtil.isEmpty(validation) && ReflectUtil.forNameOrNull(NOT_NULL) != null) {
                 this.validation = new ArrayList<>(Collections.singleton(javaxValidation()));
             }
-            if (ReflectUtil.forNameOrNull(JACKSON_PROPERTY) != null) {
-
+            if (ObjectUtil.isEmpty(fieldDoc) &&ReflectUtil.forNameOrNull(JACKSON_PROPERTY) != null) {
+                this.fieldDoc = new ArrayList<>(Collections.singleton(jacksonFieldDoc()));
             }
         }
     }
@@ -93,26 +92,6 @@ public class ApiDocParserConfig {
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
-    @Data
-    public static class Http {
-
-        private String pathAnno;
-        private List<String> pathGetter = Arrays.asList("path", "value"); // string or string[]
-        private String actionAnno;
-        private List<String> actionGetter; // string or string[] or Enum[]
-        private String pathVarAnno;
-        private List<String> pathVarGetter = Arrays.asList("name", "value"); // string
-        private String requiredAnno;
-        private List<String> requiredGetter = Collections.singletonList("required"); // boolean
-    }
-
-    @Data
-    public static class Validation {
-
-        private String notNullAnno;
-        private String notEmptyAnno;
-        private String notBlankAnno;
-    }
 
     @Data
     public static class MergeInputParam {
@@ -145,46 +124,73 @@ public class ApiDocParserConfig {
     }
 
     @Data
-    public static class FunctionAnno {
+    public static class Http {
 
-        private String anno;
-        private List<String> commentGetter = Arrays.asList("comment", "description");
-        private List<String> nestedParamGetter = Arrays.asList("params", "parameters");
-        private List<String> nestedParamNameGetter = Collections.singletonList("name");
-        private List<String> nestedParamCommentGetter = Arrays.asList("comment", "description");
-        private List<String> nestedParamRequiredGetter = Collections.singletonList("required");
+        private String path;
+        private List<String> pathMethod = Arrays.asList("path", "value"); // string or string[]
+        private String action;
+        private List<String> actionMethod; // string or string[] or Enum[]
+        private String pathVar;
+        private List<String> pathVarMethod = Arrays.asList("name", "value"); // string
+        private String required;
+        private List<String> requiredMethod = Collections.singletonList("required"); // boolean
     }
 
     @Data
-    public static class ParamAnno {
+    public static class Validation {
 
-        private String anno;
-        private List<String> nameGetter = Arrays.asList("name", "value");
-        private List<String> commentGetter = Arrays.asList("comment", "description");
-        private List<String> requiredGetter = Collections.singletonList("required"); // boolean
+        private String notNull;
+        private String notEmpty;
+        private String notBlank;
+    }
+
+    @Data
+    public static class FunctionDoc {
+
+        private String name;
+        private List<String> commentMethod = COMMENT_METHODS;
+        private List<String> nestedParamMethod = Arrays.asList("params", "parameters");
+        private List<String> nestedParamNameMethod = Collections.singletonList("name");
+        private List<String> nestedParamCommentMethod = COMMENT_METHODS;
+        private List<String> nestedParamRequiredMethod = Collections.singletonList("required");
+    }
+
+    @Data
+    public static class FieldDoc {
+
+        private String name;
+        private List<String> nameMethod = Arrays.asList("name", "value");
+        private List<String> commentMethod = COMMENT_METHODS;
+        private List<String> requiredMethod = Collections.singletonList("required"); // boolean
     }
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
     private static Http springWeb() {
         Http h = new Http();
-        h.setPathAnno(REQUEST_MAPPING);
-        h.setActionAnno(REQUEST_MAPPING);
-        h.setActionGetter(Arrays.asList("method", "action"));
-        h.setRequiredAnno("org.springframework.web.bind.annotation.RequestParam");
-        h.setPathVarAnno("org.springframework.web.bind.annotation.PathVariable");
+        h.setPath(REQUEST_MAPPING);
+        h.setAction(REQUEST_MAPPING);
+        h.setActionMethod(Arrays.asList("method", "action"));
+        h.setRequired("org.springframework.web.bind.annotation.RequestParam");
+        h.setPathVar("org.springframework.web.bind.annotation.PathVariable");
         return h;
     }
 
     private static Validation javaxValidation() {
         Validation v = new Validation();
-        v.setNotNullAnno(NOT_NULL);
-        v.setNotEmptyAnno("javax.validation.constraints.NotEmpty");
+        v.setNotNull(NOT_NULL);
+        v.setNotEmpty("javax.validation.constraints.NotEmpty");
         // javax-validation 1.0 has no NotBlank
         if (ReflectUtil.forNameOrNull(NOT_BLANK) != null) {
-            v.setNotBlankAnno(NOT_BLANK);
+            v.setNotBlank(NOT_BLANK);
         }
         return v;
+    }
+
+    private static FieldDoc jacksonFieldDoc() {
+        FieldDoc f = new FieldDoc();
+        f.setName(JACKSON_PROPERTY);
+        return f;
     }
 
     private static final String NOT_NULL = "javax.validation.constraints.NotNull";
@@ -192,4 +198,6 @@ public class ApiDocParserConfig {
     private static final String REQUEST_MAPPING =
             "org.springframework.web.bind.annotation.RequestMapping";
     private static final String JACKSON_PROPERTY = "com.fasterxml.jackson.annotation.JsonProperty";
+    private static final List<String> COMMENT_METHODS = Arrays.asList(
+            "comment", "description", "desc", "displayName");
 }

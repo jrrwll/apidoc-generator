@@ -11,7 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
@@ -21,26 +24,31 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
+import org.dreamcat.common.reflect.ObjectType;
 import org.dreamcat.common.util.ByteUtil;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.common.reflect.ObjectType;
 
 /**
  * @author Jerry Will
  * @version 2022-01-04
  */
 @Setter
+@NoArgsConstructor
 public class SwaggerRenderer implements ApiDocRenderer {
 
     private String defaultTitle = "";
     private String defaultVersion = "";
-    private String fieldNameAnnotation;
-    private List<String> fieldNameAnnotationName;
-    private Function<Field, String> fieldNameGetter;
+    // private String fieldNameAnnotation;
+    // private List<String> fieldNameAnnotationName;
+    private Function<Field, String> fieldNameGetter = Field::getName;
     private ClassLoader classLoader;
+
+    public SwaggerRenderer(ApiDocParserConfig config) {
+        this.fieldNameGetter = field -> getFieldName(field, config);
+    }
 
     @Override
     public void render(ApiDoc apiDoc, Writer out) throws IOException {
@@ -50,9 +58,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
     }
 
     private Swagger renderSwagger(ApiDoc apiDoc) {
-        afterPropertySet();
         Swagger swagger = new Swagger();
-
         renderInfo(apiDoc, swagger);
 
         List<Tag> tags = new ArrayList<>();
@@ -221,35 +227,28 @@ public class SwaggerRenderer implements ApiDocRenderer {
                 .replace(", ", "");
     }
 
-    private void afterPropertySet() {
-        if (fieldNameGetter == null &&
-                ObjectUtil.isNotBlank(fieldNameAnnotation) &&
-                ObjectUtil.isNotEmpty(fieldNameAnnotationName)) {
-            fieldNameGetter = this::fieldNameAnnotationName;
-        }
-    }
+    private String getFieldName(Field field, ApiDocParserConfig config) {
+        if (ObjectUtil.isEmpty(config.getFieldDoc())) return field.getName();
 
-    private String fieldNameAnnotationName(Field field) {
-        Class<? extends Annotation> annType;
-        if (classLoader == null) {
-            annType = ReflectUtil.forName(fieldNameAnnotation);
-        } else {
-            annType = ReflectUtil.forName(fieldNameAnnotation, classLoader);
-        }
-        Object ann = field.getDeclaredAnnotation(annType);
-        if (ann != null) {
-            for (String methodName : fieldNameAnnotationName) {
-                String name = (String) ReflectUtil.invoke(ann, methodName);
-                if (ObjectUtil.isNotEmpty(name)) {
-                    return name;
-                }
+        for (FieldDoc fieldDoc : config.getFieldDoc()) {
+            if (ObjectUtil.isEmpty(fieldDoc.getName()) ||
+                    ObjectUtil.isEmpty(fieldDoc.getNameMethod())) continue;
+            Class<? extends Annotation> annType;
+            if (classLoader == null) {
+                annType = ReflectUtil.forName(fieldDoc.getName());
+            } else {
+                annType = ReflectUtil.forName(fieldDoc.getName(), classLoader);
+            }
+            Object annoObj = field.getDeclaredAnnotation(annType);
+            if (annoObj == null) continue;
+
+            for (String method : fieldDoc.getNameMethod()) {
+                Object nameObj = ReflectUtil.invoke(annoObj, method);
+                if (nameObj == null) continue;
+                if (nameObj instanceof String && nameObj.toString().isEmpty()) continue;
+                return nameObj.toString();
             }
         }
         return field.getName(); // default use field name
-    }
-
-    public void useJacksonFieldNameGetter() {
-        this.fieldNameAnnotation = "com.fasterxml.jackson.annotation.JsonProperty";
-        this.fieldNameAnnotationName = Collections.singletonList("value");
     }
 }

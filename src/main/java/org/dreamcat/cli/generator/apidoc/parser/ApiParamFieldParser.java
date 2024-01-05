@@ -14,13 +14,12 @@ import org.dreamcat.common.reflect.ObjectType;
  * @author Jerry Will
  * @version 2022-07-11
  */
-public class ApiParamFieldParser extends BaseParser {
+class ApiParamFieldParser extends BaseParser {
 
     final ApiDocParser apiDocParser;
 
     public ApiParamFieldParser(ApiDocParser apiDocParser) {
-        super(apiDocParser.config, apiDocParser.classLoader,
-                apiDocParser.randomGenerator, apiDocParser.commentJavaParser);
+        super(apiDocParser.config, apiDocParser.classLoader);
         this.apiDocParser = apiDocParser;
     }
 

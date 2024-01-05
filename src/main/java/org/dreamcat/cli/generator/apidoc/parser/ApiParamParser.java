@@ -1,5 +1,6 @@
 package org.dreamcat.cli.generator.apidoc.parser;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +24,16 @@ import org.dreamcat.common.reflect.ObjectType;
 public class ApiParamParser extends BaseParser {
 
     final ApiDocParser apiDocParser;
+    final ApiParamFieldParser apiParamFieldParser;
 
     public ApiParamParser(ApiDocParser apiDocParser) {
         super(apiDocParser.config, apiDocParser.classLoader,
                 apiDocParser.randomGenerator, apiDocParser.commentJavaParser);
         this.apiDocParser = apiDocParser;
+        this.apiParamFieldParser = new ApiParamFieldParser(apiDocParser);
     }
 
-    ApiOutputParam parseOutputParam() {
+    public ApiOutputParam parseOutputParam(CommentMethodDef methodDef, Method method) {
         ObjectMethod objectMethod = ObjectMethod.fromMethod(method);
         List<ObjectParameter> objectParameters = objectMethod.getParameters();
         ObjectType returnType = objectMethod.getReturnType();
@@ -40,9 +43,10 @@ public class ApiParamParser extends BaseParser {
         // extra info
         outputParam.setJsonWithComment(toJSONWithComment(returnType));
         outputParam.setFields(apiParamFieldParser.resolveParamField(returnType));
+        return outputParam;
     }
 
-    List<ApiInputParam> parseInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
+    public List<ApiInputParam> parseInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
         List<CommentParameterDef> parameters = methodDef.getParameters();
         int n = parameters.size();
         List<ApiInputParam> inputParams = new ArrayList<>(n);
@@ -75,7 +79,7 @@ public class ApiParamParser extends BaseParser {
         return apiParam;
     }
 
-    private ApiInputParam parseMergedInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
+    public ApiInputParam parseMergedInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
         ApiInputParam apiParam = new ApiInputParam();
         apiParam.setName("<param>");
         apiParam.setTypeName("<anonymous>"); // merged type

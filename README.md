@@ -9,22 +9,21 @@ mvn archetype:generate \
     -DartifactId=apidoc-generator-maven-plugin \
     -DarchetypeArtifactId=maven-archetype-mojo \
     -DinteractiveMode=false
+```
 
-# use the plugin
+```shell
+# create a project which use my maven-plugin
 mvn archetype:generate \
     -DgroupId=org.dreamcat \
     -DartifactId=plugin-maven-example \
     -DinteractiveMode=false
-```
 
-```shell
 mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
 ```
 
 or add shorthand to `~/.m2/settings.xml`
 
 ```xml
-
 <pluginGroups>
   <pluginGroup>org.dreamcat</pluginGroup>
 </pluginGroups>

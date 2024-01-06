@@ -8,10 +8,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
-import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Text;
+import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FunctionDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
 import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
@@ -57,27 +62,27 @@ public class ApiDocGeneratorTask extends DefaultTask {
 
         ApiDocParserConfig config = buildApiDocConfig();
 
-        Swagger swagger = extension.getSwagger();
         // swagger
+        Swagger swagger = extension.getSwagger();
         if (swagger.getEnabled().getOrElse(false)) {
             ApiDocRenderer renderer = swaggerRenderer(swagger);
             output(config, renderer, userCodeClassLoader);
-        }
-        // jwc
-        Text text = extension.getText();
-        if (text.getEnabled().getOrElse(true)) {
-            ApiDocRenderer renderer = textRenderer(text);
-            output(config, renderer, userCodeClassLoader);
+            return;
         }
         // renderer plugin
         RendererPlugin rendererPlugin = extension.getRendererPlugin();
-        if (rendererPlugin.getEnabled().getOrElse(true)) {
+        if (rendererPlugin.getPath().getOrNull() != null) {
             ApiDocRenderer renderer = externalRenderer(rendererPlugin, userCodeClassLoader);
             output(config, renderer, userCodeClassLoader);
+            return;
         }
+        // jwc
+        JsonWithComment jwc = extension.getJsonWithComment();
+        ApiDocRenderer renderer = jsonWithCommentRenderer(jwc);
+        output(config, renderer, userCodeClassLoader);
     }
 
-    private void output (
+    private void output(
             ApiDocParserConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader) throws IOException {
         getLogger().info("generate with config: {}, renderer: {}",
@@ -91,12 +96,12 @@ public class ApiDocGeneratorTask extends DefaultTask {
         String outputPath = extension.getOutputPath().getOrNull();
         boolean rewrite = extension.getRewrite().get();
         if (outputPath == null) {
-            if (getLogger().isDebugEnabled()) {
+            if (getLogger().isInfoEnabled()) {
                 getLogger().warn("only print doc since `outputPath` is unset");
             }
-            getLogger().info("********** Generated Doc **********");
-            getLogger().info(doc);
-            getLogger().info("***********************************");
+            getLogger().quiet("********** Generated Doc **********");
+            getLogger().quiet(doc); // print doc to console
+            getLogger().quiet("***********************************");
             return;
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
@@ -119,13 +124,14 @@ public class ApiDocGeneratorTask extends DefaultTask {
         ApiDocParserConfig config = new ApiDocParserConfig();
         ApiDocGeneratorExtension extension = getProject().getExtensions()
                 .getByType(ApiDocGeneratorExtension.class);
-        setIf(config::setBasePackages, extension.getBasePackages());
 
+        setIf(config::setVerbose, extension.getVerbose());
+
+        setIf(config::setBasePackages, extension.getBasePackages());
         setIf(config::setSrcDirs, extension.getSrcDirs());
         if (ObjectUtil.isEmpty(config.getSrcDirs())) {
             config.setSrcDirs(buildDefaultSrcDirs());
         }
-
         config.setJavaFileDirs(extension.getJavaFileDirs().get());
 
         config.setUseRelativeJavaFilePath(extension.getUseRelativeJavaFilePath().get());
@@ -133,11 +139,55 @@ public class ApiDocGeneratorTask extends DefaultTask {
         if (extension.getMergeInputParam().getOrElse(false)) {
             config.setMergeInputParam(MergeInputParam.flatType());
         }
+
         config.setAutoDetect(extension.getAutoDetect().get());
+        List<Http> httpList = extension.getHttp().getAsMap().values().stream().map(it -> {
+            Http http = new Http();
+            setIf(http::setPath, it.getPath());
+            setIf(http::setPathMethod, it.getPathMethod());
+            setIf(http::setAction, it.getAction());
+            setIf(http::setActionMethod, it.getActionMethod());
+            setIf(http::setPathVar, it.getPathVar());
+            setIf(http::setPathVarMethod, it.getPathVarMethod());
+            setIf(http::setRequired, it.getRequired());
+            setIf(http::setRequiredMethod, it.getRequiredMethod());
+            if (http.getPath() == null && http.getAction() == null &&
+                    http.getPathVar() == null && http.getRequired() == null) {
+                return null;
+            }
+            return http;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (!httpList.isEmpty()) config.setHttp(httpList);
+
+        List<FunctionDoc> functionDocs = extension.getFunctionDoc()
+                .getAsMap().values().stream().map(it -> {
+                    FunctionDoc doc = new FunctionDoc();
+                    setIf(doc::setName, it.getAnnotationName());
+                    setIf(doc::setCommentMethod, it.getCommentMethod());
+                    setIf(doc::setNestedParamMethod, it.getNestedParamMethod());
+                    setIf(doc::setNestedParamNameMethod, it.getNestedParamNameMethod());
+                    setIf(doc::setNestedParamCommentMethod, it.getNestedParamCommentMethod());
+                    setIf(doc::setNestedParamRequiredMethod, it.getNestedParamRequiredMethod());
+                    if (doc.getName() == null) return null;
+                    return doc;
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (!functionDocs.isEmpty()) config.setFunctionDoc(functionDocs);
+
+        List<FieldDoc> fieldDocs = extension.getFieldDoc()
+                .getAsMap().values().stream().map(it -> {
+                    FieldDoc doc = new FieldDoc();
+                    setIf(doc::setName, it.getAnnotationName());
+                    setIf(doc::setNameMethod, it.getNameMethod());
+                    setIf(doc::setCommentMethod, it.getCommentMethod());
+                    setIf(doc::setRequiredMethod, it.getRequiredMethod());
+                    if (doc.getName() == null) return null;
+                    return doc;
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (!functionDocs.isEmpty()) config.setFieldDoc(fieldDocs);
         return config;
     }
 
-    private ApiDocRenderer textRenderer(Text text) {
+    private ApiDocRenderer jsonWithCommentRenderer(JsonWithComment text) {
         String template = text.getTemplate().getOrNull();
         if (template != null) {
             Map<String, String> includeTemplates = text.getIncludeTemplates()
@@ -183,13 +233,9 @@ public class ApiDocGeneratorTask extends DefaultTask {
 
     private ApiDocRenderer externalRenderer(RendererPlugin rendererPlugin,
             ClassLoader classLoader) {
-        String dir = rendererPlugin.getDir().getOrNull();
-        if (dir == null) {
-            getLogger().error("dir is unset in rendererPlugin");
-            throw new RuntimeException("rendererPlugin.dir is unset");
-        }
+        String path = rendererPlugin.getPath().getOrNull();
         Map<String, Object> constructArgs = rendererPlugin.getConstructArgs().getOrNull();
-        return ApiDocRenderer.loadFromPath(dir, constructArgs, classLoader);
+        return ApiDocRenderer.loadFromPath(path, constructArgs, classLoader);
     }
 
     private List<String> buildDefaultClassPath() {

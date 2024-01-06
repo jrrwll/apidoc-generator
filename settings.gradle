@@ -1,3 +1,4 @@
 rootProject.name = 'apidoc-generator'
 
-include 'plugin-gradle'
+include 'apidoc-generator-gradle-plugin'
+project(":apidoc-generator-gradle-plugin").projectDir = file("$rootDir/plugin-gradle")

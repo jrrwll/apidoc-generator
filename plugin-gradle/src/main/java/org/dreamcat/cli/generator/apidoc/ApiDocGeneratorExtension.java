@@ -2,6 +2,7 @@ package org.dreamcat.cli.generator.apidoc;
 
 import java.util.Arrays;
 import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
@@ -12,6 +13,8 @@ import org.gradle.api.tasks.Nested;
  * @version 2022-03-16
  */
 public abstract class ApiDocGeneratorExtension {
+
+    abstract Property<Boolean> getVerbose();
 
     abstract Property<String> getOutputPath();
 
@@ -35,6 +38,8 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract Property<Boolean> getAutoDetect();
 
+    abstract ListProperty<String> getValidation();
+
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
         getUseRelativeJavaFilePath().convention(true);
@@ -48,7 +53,7 @@ public abstract class ApiDocGeneratorExtension {
     /// nested
 
     @Nested
-    abstract Text getText();
+    abstract JsonWithComment getJsonWithComment();
 
     @Nested
     abstract Swagger getSwagger();
@@ -56,8 +61,8 @@ public abstract class ApiDocGeneratorExtension {
     @Nested
     abstract RendererPlugin getRendererPlugin();
 
-    public void jsonWithComment(Action<? super Text> action) {
-        action.execute(getText());
+    public void jsonWithComment(Action<? super JsonWithComment> action) {
+        action.execute(getJsonWithComment());
     }
 
     public void swagger(Action<? super Swagger> action) {
@@ -68,11 +73,15 @@ public abstract class ApiDocGeneratorExtension {
         action.execute(getRendererPlugin());
     }
 
+    abstract NamedDomainObjectContainer<Http> getHttp();
+
+    abstract NamedDomainObjectContainer<FunctionDoc> getFunctionDoc();
+
+    abstract NamedDomainObjectContainer<FieldDoc> getFieldDoc();
+
     /// data class
 
-    public abstract static class Text {
-
-        abstract Property<Boolean> getEnabled();
+    public abstract static class JsonWithComment {
 
         // template
         abstract Property<String> getTemplate();
@@ -130,10 +139,59 @@ public abstract class ApiDocGeneratorExtension {
 
     public abstract static class RendererPlugin {
 
-        abstract Property<Boolean> getEnabled();
-
-        abstract Property<String> getDir();
+        abstract Property<String> getPath();
 
         abstract MapProperty<String, Object> getConstructArgs();
+    }
+
+    public interface Http {
+
+        String getName(); // for NamedDomainObjectContainer
+
+        Property<String> getPath();
+
+        ListProperty<String> getPathMethod();
+
+        Property<String> getAction();
+
+        ListProperty<String> getActionMethod();
+
+        Property<String> getPathVar();
+
+        ListProperty<String> getPathVarMethod();
+
+        Property<String> getRequired();
+
+        ListProperty<String> getRequiredMethod();
+    }
+
+    public interface FunctionDoc {
+
+        String getName();
+
+        Property<String> getAnnotationName();
+
+        ListProperty<String> getCommentMethod();
+
+        ListProperty<String> getNestedParamMethod();
+
+        ListProperty<String> getNestedParamNameMethod();
+
+        ListProperty<String> getNestedParamCommentMethod();
+
+        ListProperty<String> getNestedParamRequiredMethod();
+    }
+
+    public interface FieldDoc {
+
+        String getName();
+
+        Property<String> getAnnotationName();
+
+        ListProperty<String> getNameMethod();
+
+        ListProperty<String> getCommentMethod();
+
+        ListProperty<String> getRequiredMethod();
     }
 }

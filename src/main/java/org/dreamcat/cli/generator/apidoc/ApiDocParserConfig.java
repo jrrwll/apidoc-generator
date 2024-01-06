@@ -51,6 +51,7 @@ public class ApiDocParserConfig {
                 this.http = new ArrayList<>(Collections.singleton(springWeb()));
             }
             if (ObjectUtil.isEmpty(validation) && ReflectUtil.forNameOrNull(NOT_NULL) != null) {
+
                 this.validation = new ArrayList<>(Collections.singleton(javaxValidation()));
             }
             if (ObjectUtil.isEmpty(fieldDoc) &&ReflectUtil.forNameOrNull(JACKSON_PROPERTY) != null) {

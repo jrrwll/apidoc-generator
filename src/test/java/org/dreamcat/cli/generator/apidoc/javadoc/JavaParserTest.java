@@ -10,6 +10,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedFieldDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedTypeDeclaration;
+import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ClassLoaderTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
@@ -57,8 +58,14 @@ class JavaParserTest {
                 } else if (member.isFieldDeclaration()) {
                     FieldDeclaration fieldDeclaration = (FieldDeclaration) member;
                     ResolvedFieldDeclaration resolved = fieldDeclaration.resolve();
-                    ResolvedTypeDeclaration declaringType = resolved.declaringType();
-                    System.out.println(declaringType.getQualifiedName());
+                    String fieldType = null;
+                    ResolvedType resolvedType = resolved.getType();
+                    if (resolvedType.isReferenceType()) {
+                        fieldType = resolvedType.asReferenceType().getQualifiedName();
+                    } else if (resolvedType.isPrimitive()) {
+                        fieldType = resolvedType.asPrimitive().name();
+                    }
+                    System.out.println(fieldType);
                 }
             }
         }

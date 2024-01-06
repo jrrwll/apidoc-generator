@@ -31,8 +31,8 @@ public class CommentClassDef {
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
     public CommentClassDef(TypeDeclaration<?> declaration) {
-        ResolvedReferenceTypeDeclaration resolve = declaration.resolve();
-        this.type = resolve.getQualifiedName();
+        ResolvedReferenceTypeDeclaration resolved = declaration.resolve();
+        this.type = resolved.getQualifiedName();
         this.comment = JavaParserUtil.getJavadocComment(declaration);
 
         this.fields = declaration.getFields().stream()

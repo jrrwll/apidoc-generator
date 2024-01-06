@@ -21,8 +21,9 @@ allprojects {
         lombokVersion = "1.18.30"
         // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
         junitVersion = "5.9.2"
+        // don't use 3.25.8 since it has some bugs
         // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
-        javaparserVersion = '3.25.8'
+        javaparserVersion = '3.24.0'
         // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
         jacksonVersion = '2.15.2'
     }

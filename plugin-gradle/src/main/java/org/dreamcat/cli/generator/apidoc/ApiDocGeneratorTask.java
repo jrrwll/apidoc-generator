@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.io.PathUtil;
 import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.provider.Provider;
@@ -235,6 +237,16 @@ public class ApiDocGeneratorTask extends DefaultTask {
             ClassLoader classLoader) {
         String path = rendererPlugin.getPath().getOrNull();
         Map<String, Object> constructArgs = rendererPlugin.getConstructArgs().getOrNull();
+        if (ObjectUtil.isNotEmpty(constructArgs)) {
+            Map<String, Object> args = new HashMap<>(constructArgs.size());
+            constructArgs.forEach((k, v) -> {
+                if (v instanceof String) {
+                    v = InterpolationUtil.format((String) v, System.getenv());
+                }
+                args.put(k, v);
+            });
+            constructArgs = args;
+        }
         return ApiDocRenderer.loadFromPath(path, constructArgs, classLoader);
     }
 

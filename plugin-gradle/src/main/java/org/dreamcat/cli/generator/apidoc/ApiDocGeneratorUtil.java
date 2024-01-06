@@ -2,6 +2,7 @@ package org.dreamcat.cli.generator.apidoc;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

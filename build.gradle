@@ -22,7 +22,7 @@ ext {
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     junitVersion = "5.9.2"
     // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
-    javaparserVersion = '3.25.2'
+    javaparserVersion = '3.25.8'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
     jacksonVersion = '2.15.2'
 }

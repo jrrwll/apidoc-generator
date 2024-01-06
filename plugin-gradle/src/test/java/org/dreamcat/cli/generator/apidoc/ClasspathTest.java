@@ -14,29 +14,27 @@ import org.junit.jupiter.api.Test;
  */
 class ClasspathTest {
 
-
     @Test
     void test() throws Exception {
         String gradleRepo = System.getenv("HOME") + "/.gradle/caches/modules-2/files-2.1";
         List<String> classpath = Collections.singletonList("../build/classes/java/test");
         classpath = PathUtil.absolute(classpath);
         List<String> jarDirs = Arrays.asList(
-                gradleRepo + "/org.springframework/spring-web/5.3.17",
-                gradleRepo + "/org.springframework/spring-core/5.3.17");
+                gradleRepo + "/org.springframework/spring-web/5.3.31",
+                gradleRepo + "/org.springframework/spring-core/5.3.31");
         if (ObjectUtil.isNotEmpty(jarDirs)) {
             jarDirs = ApiDocGeneratorUtil.treeClassPath(jarDirs);
         }
         classpath.addAll(jarDirs);
         ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(classpath);
 
-        ApiDocConfig config = new ApiDocConfig();
+        ApiDocParserConfig config = new ApiDocParserConfig();
         config.setSrcDirs(Collections.singletonList("../src/test/java"));
         config.setJavaFileDirs(Collections.singletonList("com/example/controller"));
         config.setUseRelativeJavaFilePath(true);
         config.setIgnoreInputParamTypes(Collections.singleton(
                 "org.springframework.web.multipart.MultipartFile"));
-        config.setEnableSpringWeb(true);
-        config.setJsonWithComment(true);
+        config.setAutoDetect(true);
 
         SwaggerRenderer renderer = new SwaggerRenderer();
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);

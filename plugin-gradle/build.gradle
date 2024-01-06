@@ -31,7 +31,7 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
 
     implementation 'org.dreamcat:common:0.4'
-    implementation 'org.dreamcat:apidoc-generator:0.4'
+    implementation 'org.dreamcat:apidoc-generator:0.4-SNAPSHOT'
 }
 
 // https://plugins.gradle.org/docs/publish-plugin

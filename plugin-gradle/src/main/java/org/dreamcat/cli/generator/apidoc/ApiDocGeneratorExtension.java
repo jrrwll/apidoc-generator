@@ -3,6 +3,7 @@ package org.dreamcat.cli.generator.apidoc;
 import java.util.Arrays;
 import org.gradle.api.Action;
 import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
@@ -30,11 +31,9 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract ListProperty<String> getIgnoreInputParamTypes();
 
-    abstract Property<Boolean> getEnableMergeInputParam();
+    abstract Property<Boolean> getMergeInputParam();
 
-    abstract Property<Boolean> getEnableAutoDetect();
-
-    abstract Property<Boolean> getEnableSpringWeb();
+    abstract Property<Boolean> getAutoDetect();
 
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
@@ -43,8 +42,7 @@ public abstract class ApiDocGeneratorExtension {
                 "org.springframework.web.multipart.MultipartFile",
                 "[B"
         ));
-        getEnableAutoDetect().convention(true);
-        getEnableSpringWeb().convention(true);
+        getAutoDetect().convention(true);
     }
 
     /// nested
@@ -55,6 +53,9 @@ public abstract class ApiDocGeneratorExtension {
     @Nested
     abstract Swagger getSwagger();
 
+    @Nested
+    abstract RendererPlugin getRendererPlugin();
+
     public void jsonWithComment(Action<? super Text> action) {
         action.execute(getText());
     }
@@ -63,23 +64,29 @@ public abstract class ApiDocGeneratorExtension {
         action.execute(getSwagger());
     }
 
+    public void rendererPlugin(Action<? super RendererPlugin> action) {
+        action.execute(getRendererPlugin());
+    }
+
     /// data class
 
     public abstract static class Text {
 
         abstract Property<Boolean> getEnabled();
 
-        abstract Property<Boolean> getEnableJsonWithComment();
-
-        abstract Property<Boolean> getEnableIndentedTable();
-
+        // template
         abstract Property<String> getTemplate();
+
+        abstract MapProperty<String, String> getIncludeTemplates();
+
+        // jwc
+        abstract Property<Boolean> getFieldsNoRequired();
+
+        abstract Property<Boolean> getOutputParamAsIndentedTable();
 
         abstract Property<String> getNameHeader();
 
         abstract Property<String> getFunctionHeader();
-
-        abstract Property<String> getParamHeader();
 
         abstract Property<String> getInputParamTitle();
 
@@ -90,6 +97,8 @@ public abstract class ApiDocGeneratorExtension {
         abstract Property<String> getSeqPrefix();
 
         abstract Property<Integer> getMaxNestLevel();
+
+        abstract Property<String>  getIndentSpace();
 
         abstract Property<String> getIndentPrefix();
 
@@ -117,5 +126,14 @@ public abstract class ApiDocGeneratorExtension {
         abstract ListProperty<String> getFieldNameAnnotationName();
 
         abstract Property<Boolean> getUseJacksonFieldNameGetter();
+    }
+
+    public abstract static class RendererPlugin {
+
+        abstract Property<Boolean> getEnabled();
+
+        abstract Property<String> getDir();
+
+        abstract MapProperty<String, Object> getConstructArgs();
     }
 }

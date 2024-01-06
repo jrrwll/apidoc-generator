@@ -26,13 +26,11 @@ public class ApiDocGenerator {
 
     public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer, ClassLoader classLoader) {
         this(new ApiDocParser(config, classLoader), renderer);
-        this.renderer.setClassLoader(classLoader);
     }
 
     public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer,
             ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
         this(new ApiDocParser(config, classLoader, randomGenerator), renderer);
-        this.renderer.setClassLoader(classLoader);
     }
 
     public String generate() throws IOException {

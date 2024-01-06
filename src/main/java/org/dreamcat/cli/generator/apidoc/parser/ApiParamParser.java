@@ -41,8 +41,8 @@ class ApiParamParser extends BaseParser {
         outputParam.setType(returnType);
         outputParam.setComment(methodDef.getReturnComment());
         // extra info
-        outputParam.setJsonWithComment(apiDocParser.toJSONWithComment(returnType));
         outputParam.setFields(apiParamFieldParser.resolveParamField(returnType));
+        outputParam.setJsonWithComment(apiDocParser.toJSONWithComment(returnType));
         return outputParam;
     }
 

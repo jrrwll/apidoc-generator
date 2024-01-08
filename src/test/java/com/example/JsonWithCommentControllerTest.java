@@ -1,7 +1,7 @@
 package com.example;
 
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +15,14 @@ public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
     @Test
     void test1() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         JsnoWithCommentRenderer renderer = createRenderer();
         generate(config, renderer);
     }
 
     @Test
     void test2() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
 
         JsnoWithCommentRenderer renderer = createRenderer();
         renderer.setPinFunctionComment(true);
@@ -34,7 +34,7 @@ public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
     @Test
     void testMergeInput() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         config.setMergeInputParam(MergeInputParam.flatType());
 
         JsnoWithCommentRenderer renderer = createRenderer();
@@ -43,7 +43,7 @@ public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
     @Test
     void testOutputParamAsIndentedTable() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
 
         JsnoWithCommentRenderer renderer = createRenderer();
         renderer.setOutputParamAsIndentedTable(true);

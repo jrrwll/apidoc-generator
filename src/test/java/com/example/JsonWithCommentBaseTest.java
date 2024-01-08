@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 
 /**
@@ -20,8 +20,8 @@ public class JsonWithCommentBaseTest {
         return new JsnoWithCommentRenderer();
     }
 
-    ApiDocParserConfig createConfig(String javaFileDir) {
-        ApiDocParserConfig config = new ApiDocParserConfig();
+    ApiDocParseConfig createConfig(String javaFileDir) {
+        ApiDocParseConfig config = new ApiDocParseConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));
@@ -32,7 +32,7 @@ public class JsonWithCommentBaseTest {
         return config;
     }
 
-    void generate(ApiDocParserConfig config, JsnoWithCommentRenderer renderer) throws Exception {
+    void generate(ApiDocParseConfig config, JsnoWithCommentRenderer renderer) throws Exception {
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer);
         String doc = generator.generate();
         System.out.println("--- --- ---   --- --- ---   --- --- ---");

@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.function.Function;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
@@ -46,7 +46,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
     private Function<Field, String> fieldNameGetter = Field::getName;
     private ClassLoader classLoader;
 
-    public SwaggerRenderer(ApiDocParserConfig config) {
+    public SwaggerRenderer(ApiDocParseConfig config) {
         this.fieldNameGetter = field -> getFieldName(field, config);
     }
 
@@ -227,7 +227,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
                 .replace(", ", "");
     }
 
-    private String getFieldName(Field field, ApiDocParserConfig config) {
+    private String getFieldName(Field field, ApiDocParseConfig config) {
         if (ObjectUtil.isEmpty(config.getFieldDoc())) return field.getName();
 
         for (FieldDoc fieldDoc : config.getFieldDoc()) {

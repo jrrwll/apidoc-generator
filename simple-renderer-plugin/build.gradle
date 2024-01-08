@@ -1,0 +1,3 @@
+dependencies {
+    implementation 'org.dreamcat:apidoc-generator:0.4-SNAPSHOT'
+}

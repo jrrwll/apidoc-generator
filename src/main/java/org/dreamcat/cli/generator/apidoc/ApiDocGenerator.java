@@ -20,15 +20,15 @@ public class ApiDocGenerator {
     private final ApiDocParser parser;
     private final ApiDocRenderer renderer;
 
-    public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer) {
+    public ApiDocGenerator(ApiDocParseConfig config, ApiDocRenderer renderer) {
         this(config, renderer, Thread.currentThread().getContextClassLoader());
     }
 
-    public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer, ClassLoader classLoader) {
+    public ApiDocGenerator(ApiDocParseConfig config, ApiDocRenderer renderer, ClassLoader classLoader) {
         this(new ApiDocParser(config, classLoader), renderer);
     }
 
-    public ApiDocGenerator(ApiDocParserConfig config, ApiDocRenderer renderer,
+    public ApiDocGenerator(ApiDocParseConfig config, ApiDocRenderer renderer,
             ClassLoader classLoader, ObjectRandomGenerator randomGenerator) {
         this(new ApiDocParser(config, classLoader, randomGenerator), renderer);
     }

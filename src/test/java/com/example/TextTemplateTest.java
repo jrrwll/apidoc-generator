@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.FunctionUtil;
@@ -51,7 +51,7 @@ class TextTemplateTest {
 
     void generate(String template, String javaFileDir) throws Exception {
         Objects.requireNonNull(template, "template");
-        ApiDocParserConfig config = new ApiDocParserConfig();
+        ApiDocParseConfig config = new ApiDocParseConfig();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
         config.setJavaFileDirs(Collections.singletonList(javaFileDir));

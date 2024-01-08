@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
 
 /**
  * @author Jerry Will
@@ -23,7 +23,7 @@ public class CommentJavaParser {
     private final Map<Class<?>, CommentClassDef> classCache = new ConcurrentHashMap<>();
     private final Map<Field, CommentFieldDef> fieldCache = new ConcurrentHashMap<>();
 
-    public CommentJavaParser(ApiDocParserConfig config) {
+    public CommentJavaParser(ApiDocParseConfig config) {
         this(config.getSrcDirs(), config.getBasePackages());
     }
 

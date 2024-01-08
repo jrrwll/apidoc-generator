@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
@@ -17,7 +17,6 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectType;
-import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will

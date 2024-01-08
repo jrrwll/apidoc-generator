@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FunctionDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
@@ -44,19 +44,19 @@ public class ApiDocParser extends BaseParser {
     final ApiParamParser apiParamParser;
     final ObjectRandomGenerator randomGenerator;
 
-    public ApiDocParser(ApiDocParserConfig config) {
+    public ApiDocParser(ApiDocParseConfig config) {
         this(config, (ClassLoader)null);
     }
 
-    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader) {
+    public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader) {
         this(config, classLoader, new ObjectRandomGenerator());
     }
 
-    public ApiDocParser(ApiDocParserConfig config, ObjectRandomGenerator randomGenerator) {
+    public ApiDocParser(ApiDocParseConfig config, ObjectRandomGenerator randomGenerator) {
         this(config, null, randomGenerator);
     }
 
-    public ApiDocParser(ApiDocParserConfig config, ClassLoader classLoader,
+    public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader,
             ObjectRandomGenerator randomGenerator) {
         super(config, classLoader);
         this.config.afterPropertySet(classLoader);

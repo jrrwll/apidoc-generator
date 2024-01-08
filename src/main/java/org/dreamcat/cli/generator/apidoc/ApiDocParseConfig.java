@@ -18,7 +18,7 @@ import org.dreamcat.common.util.ReflectUtil;
  * @version 2021-12-09
  */
 @Data
-public class ApiDocParserConfig {
+public class ApiDocParseConfig {
 
     // parser
     private boolean verbose;
@@ -50,11 +50,10 @@ public class ApiDocParserConfig {
             if (ObjectUtil.isEmpty(http) && ReflectUtil.forNameOrNull(REQUEST_MAPPING, classLoader) != null) {
                 this.http = new ArrayList<>(Collections.singleton(springWeb()));
             }
-            if (ObjectUtil.isEmpty(validation) && ReflectUtil.forNameOrNull(NOT_NULL) != null) {
-
+            if (ObjectUtil.isEmpty(validation) && ReflectUtil.forNameOrNull(NOT_NULL, classLoader) != null) {
                 this.validation = new ArrayList<>(Collections.singleton(javaxValidation()));
             }
-            if (ObjectUtil.isEmpty(fieldDoc) &&ReflectUtil.forNameOrNull(JACKSON_PROPERTY) != null) {
+            if (ObjectUtil.isEmpty(fieldDoc) && ReflectUtil.forNameOrNull(JACKSON_PROPERTY, classLoader) != null) {
                 this.fieldDoc = new ArrayList<>(Collections.singleton(jacksonFieldDoc()));
             }
         }

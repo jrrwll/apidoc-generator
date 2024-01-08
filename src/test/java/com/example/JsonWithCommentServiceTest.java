@@ -1,7 +1,7 @@
 package com.example;
 
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 import org.dreamcat.common.util.SetUtil;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
 
     @Test
     void test1() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         config.setIgnoreInputParamTypes(SetUtil.of(
                 "org.springframework.web.multipart.MultipartFile",
                 "com.example.base.ApiContext"
@@ -28,7 +28,7 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
 
     @Test
     void test2() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         config.setIgnoreInputParamTypes(SetUtil.of(
                 "org.springframework.web.multipart.MultipartFile",
                 "com.example.base.ApiContext"
@@ -43,14 +43,14 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
 
     @Test
     void test3() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         JsnoWithCommentRenderer renderer = createRenderer();
         generate(config, renderer);
     }
 
     @Test
     void testMergeInput() throws Exception {
-        ApiDocParserConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = createConfig(javaFileDir);
         config.setMergeInputParam(MergeInputParam.flatType());
 
         JsnoWithCommentRenderer renderer = createRenderer();

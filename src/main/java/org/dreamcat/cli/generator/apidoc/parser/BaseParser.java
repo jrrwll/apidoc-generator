@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Validation;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Validation;
 import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.ObjectUtil;
@@ -26,10 +26,10 @@ import org.dreamcat.common.util.ReflectUtil;
 @Slf4j
 class BaseParser {
 
-    final ApiDocParserConfig config;
+    final ApiDocParseConfig config;
     final ClassLoader classLoader;
 
-    BaseParser(ApiDocParserConfig config, ClassLoader classLoader) {
+    BaseParser(ApiDocParseConfig config, ClassLoader classLoader) {
         AssertUtil.requireNonNull(config, "config");
         if (classLoader == null) classLoader = Thread.currentThread().getContextClassLoader();
 

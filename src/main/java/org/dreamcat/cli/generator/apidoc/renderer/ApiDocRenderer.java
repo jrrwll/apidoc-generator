@@ -13,11 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.common.asm.BeanMapUtil;
 import org.dreamcat.common.io.UrlUtil;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.ReflectUtil;
 
 /**
  * @author Jerry Will
@@ -42,8 +44,10 @@ public interface ApiDocRenderer {
         }
     }
 
-    static ApiDocRenderer loadFromPath(String path, Map<String, Object> injectedArgs,
-            ClassLoader classLoader) {
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    static ApiDocRenderer loadFromPath(String path, String className,
+            Map<String, Object> injectedArgs, ClassLoader classLoader) {
         File file = new File(path);
         List<URL> urls = new ArrayList<>();
         if (file.isDirectory()) {
@@ -55,19 +59,13 @@ public interface ApiDocRenderer {
         } else {
             urls.add(UrlUtil.toURL(file.toURI()));
         }
-        URLClassLoader urlClassLoader = new URLClassLoader(urls.toArray(new URL[0]), classLoader);
-        // load from SPI
-        Iterator<ApiDocRenderer> loader = ServiceLoader.load(
-                ApiDocRenderer.class, urlClassLoader).iterator();
-        if (!loader.hasNext()) {
-            throw new RuntimeException("ApiDocRenderer SPI is not found in " + path);
-        }
-        ApiDocRenderer renderer = loader.next();
+        URLClassLoader cl = new URLClassLoader(urls.toArray(new URL[0]), classLoader);
+        Class<ApiDocRenderer> rendererClass = (Class<ApiDocRenderer>) cl.loadClass(className);
         // todo optimize
         if (ObjectUtil.isNotEmpty(injectedArgs)) {
-            ApiDocRenderer configuredRenderer = JsonUtil.fromMap(injectedArgs, renderer.getClass());
-            BeanMapUtil.copy(configuredRenderer, renderer);
+            return JsonUtil.fromMap(injectedArgs, rendererClass);
+        } else {
+            return ReflectUtil.newInstance(rendererClass);
         }
-        return renderer;
     }
 }

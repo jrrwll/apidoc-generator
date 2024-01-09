@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FieldDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.FunctionDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.Http;
-import org.dreamcat.cli.generator.apidoc.ApiDocParserConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
@@ -62,7 +62,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
         }
         ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(classpath);
 
-        ApiDocParserConfig config = buildApiDocConfig();
+        ApiDocParseConfig config = buildApiDocConfig();
 
         // swagger
         Swagger swagger = extension.getSwagger();
@@ -85,7 +85,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
     }
 
     private void output(
-            ApiDocParserConfig config, ApiDocRenderer renderer,
+            ApiDocParseConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader) throws IOException {
         getLogger().info("generate with config: {}, renderer: {}",
                 JsonUtil.toJson(config), renderer.getClass().getSimpleName());
@@ -122,8 +122,8 @@ public class ApiDocGeneratorTask extends DefaultTask {
         }
     }
 
-    private ApiDocParserConfig buildApiDocConfig() {
-        ApiDocParserConfig config = new ApiDocParserConfig();
+    private ApiDocParseConfig buildApiDocConfig() {
+        ApiDocParseConfig config = new ApiDocParseConfig();
         ApiDocGeneratorExtension extension = getProject().getExtensions()
                 .getByType(ApiDocGeneratorExtension.class);
 
@@ -236,6 +236,10 @@ public class ApiDocGeneratorTask extends DefaultTask {
     private ApiDocRenderer externalRenderer(RendererPlugin rendererPlugin,
             ClassLoader classLoader) {
         String path = rendererPlugin.getPath().getOrNull();
+        String className = rendererPlugin.getClassName().getOrNull();
+        if (className == null) {
+            throw new RuntimeException("rendererPlugin.className is unset");
+        }
         Map<String, Object> constructArgs = rendererPlugin.getConstructArgs().getOrNull();
         if (ObjectUtil.isNotEmpty(constructArgs)) {
             Map<String, Object> args = new HashMap<>(constructArgs.size());
@@ -247,7 +251,8 @@ public class ApiDocGeneratorTask extends DefaultTask {
             });
             constructArgs = args;
         }
-        return ApiDocRenderer.loadFromPath(path, constructArgs, classLoader);
+        getLogger().quiet("path: " + new File(path).getAbsolutePath());
+        return ApiDocRenderer.loadFromPath(path, className, constructArgs, classLoader);
     }
 
     private List<String> buildDefaultClassPath() {

@@ -26,6 +26,7 @@ allprojects {
         javaparserVersion = '3.24.0'
         // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
         jacksonVersion = '2.15.2'
+        hcVersion = '5.2.3'
     }
 
     dependencies {
@@ -58,8 +59,8 @@ dependencies {
     testImplementation 'javax.validation:validation-api:2.0.1.Final'
 }
 
-apply from: "./publish.gradle"
-apply from: "./tasks.gradle"
+apply from: new File(rootDir, 'publish.gradle')
+apply from: new File(rootDir, 'tasks.gradle')
 
 task printVersion {
     doLast {

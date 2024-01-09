@@ -1,44 +1,47 @@
-// allprojects {
-// 	plugins.withType(JavaPlugin) {
-// 	}
-// }
-
 // build jar
-void jarTask(String name, String classifier, boolean withJar, boolean includeDependencies) {
-    tasks.create(name: name, type: Jar) {
+void jarTask(String name, String classifier, boolean withJar) {
+    // tasks.create(name: name, type: Jar) {
+    tasks.register(name, Jar) {
         group 'build'
         archiveClassifier.set classifier
         // leave the file/entry that was first copied/created in place
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
 
         manifest.from jar.manifest
-        if (includeDependencies) {
-            dependsOn configurations.runtimeClasspath
-            from {
-                configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
-            } {
-                exclude "META-INF/*.SF"
-                exclude "META-INF/*.DSA"
-                exclude "META-INF/*.RSA"
-            }
+        from {
+            // findAll { it.name.endsWith('.jar') }: filter something else, such as *.pom
+            configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
         }
         if (withJar) {
-            with jar // from sourceSets.main.output
+            // from sourceSets.main.output
+            with jar
         }
     }
 }
 
-if (plugins.hasPlugin('java')) {
-    jarTask('depJar', 'dependencies', false, true)
-    jarTask('fatJar', 'all', true, true)
+plugins.withType(JavaPlugin) {
+    // zip all classes include deps to a fat jar
+    jarTask('fatJar', 'all', true)
+    // copy all dep jar to a dir
+    jarTask('depJar', 'dep', false)
+
     task allJar {
         group 'build'
         dependsOn jar, depJar, fatJar
     }
 
-    task testJar(type: Jar) {
-        group 'build'
-        archiveClassifier.set 'test'
-        from sourceSets.test.output
+    tasks.register("copyDep", Copy) {
+        destinationDir file("${buildDir}/dep")
+        from {
+            configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { file(it) }
+        }
+    }
+
+    // print all dep flatly
+    tasks.register("descDep") {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.forEach {
+            println(it.name)
+        }
     }
 }

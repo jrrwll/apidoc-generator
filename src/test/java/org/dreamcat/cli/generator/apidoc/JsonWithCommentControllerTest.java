@@ -1,27 +1,20 @@
-package com.example;
+package org.dreamcat.cli.generator.apidoc;
 
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
-import org.dreamcat.common.util.SetUtil;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Jerry Will
  * @version 2022-07-11
  */
-class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
+public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
-    String javaFileDir = srcDir + "/com/example/service";
+    String javaFileDir = srcDir + "/com/example/controller";
 
     @Test
     void test1() throws Exception {
         ApiDocParseConfig config = createConfig(javaFileDir);
-        config.setIgnoreInputParamTypes(SetUtil.of(
-                "org.springframework.web.multipart.MultipartFile",
-                "com.example.base.ApiContext"
-        ));
-
         JsnoWithCommentRenderer renderer = createRenderer();
         generate(config, renderer);
     }
@@ -29,22 +22,12 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
     @Test
     void test2() throws Exception {
         ApiDocParseConfig config = createConfig(javaFileDir);
-        config.setIgnoreInputParamTypes(SetUtil.of(
-                "org.springframework.web.multipart.MultipartFile",
-                "com.example.base.ApiContext"
-        ));
 
         JsnoWithCommentRenderer renderer = createRenderer();
-        renderer.setSeqPrefix("5.1.");
-        renderer.setInputParamTitle("- ##### Some Input Params");
-        renderer.setOutputParamTitle(null);
-        generate(config, renderer);
-    }
-
-    @Test
-    void test3() throws Exception {
-        ApiDocParseConfig config = createConfig(javaFileDir);
-        JsnoWithCommentRenderer renderer = createRenderer();
+        renderer.setPinFunctionComment(true);
+        renderer.setSeqPrefix("3.2.");
+        renderer.setInputParamTitle(null);
+        renderer.setOutputParamTitle("");
         generate(config, renderer);
     }
 
@@ -54,6 +37,16 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
         config.setMergeInputParam(MergeInputParam.flatType());
 
         JsnoWithCommentRenderer renderer = createRenderer();
+        generate(config, renderer);
+    }
+
+    @Test
+    void testOutputParamAsIndentedTable() throws Exception {
+        ApiDocParseConfig config = createConfig(javaFileDir);
+
+        JsnoWithCommentRenderer renderer = createRenderer();
+        renderer.setOutputParamAsIndentedTable(true);
+        renderer.setFieldsNoRequired(true);
         generate(config, renderer);
     }
 }

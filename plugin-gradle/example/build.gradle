@@ -31,10 +31,14 @@ apidocGenerate {
     jsonWithComment {
     }
     rendererPlugin {
+        path = "${System.getenv("HOME")}/repo/apidoc-generator/simple-renderer-plugin/build/dep"
+        className = "org.dreamcat.cli.generator.apidoc.renderer.SimpleRenderer"
         constructArgs = [
                 a: 1,
-                b: true,
-                c: 'abc'
+                b: 3.14,
+                c: true,
+                d: ["pi", "e"],
+                e: [x: 1, y: [], z: "abc"]
         ]
     }
     http {

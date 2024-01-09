@@ -8,14 +8,11 @@ import java.io.Writer;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
-import org.dreamcat.common.asm.BeanMapUtil;
 import org.dreamcat.common.io.UrlUtil;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ObjectUtil;
@@ -42,6 +39,12 @@ public interface ApiDocRenderer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static ApiDocRenderer loadFromPath(String path, String className,
+            Map<String, Object> injectedArgs) {
+        return loadFromPath(path, className, injectedArgs,
+                Thread.currentThread().getContextClassLoader());
     }
 
     @SneakyThrows

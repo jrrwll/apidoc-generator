@@ -31,7 +31,7 @@ gradlePlugin {
 //     }
 // }
 
-apply from: "../publish.gradle"
+apply from: new File(rootDir, 'publish.gradle')
 
 test {
     useJUnitPlatform()

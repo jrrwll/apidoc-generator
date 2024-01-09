@@ -141,6 +141,8 @@ public abstract class ApiDocGeneratorExtension {
 
         abstract Property<String> getPath();
 
+        abstract Property<String> getClassName();
+
         //  support to inject env vars to string value
         abstract MapProperty<String, Object> getConstructArgs();
     }

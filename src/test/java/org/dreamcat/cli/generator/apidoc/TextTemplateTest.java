@@ -1,12 +1,10 @@
-package com.example;
+package org.dreamcat.cli.generator.apidoc;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.dreamcat.cli.generator.apidoc.ApiDocGenerator;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.FunctionUtil;

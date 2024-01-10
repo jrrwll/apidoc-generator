@@ -9,13 +9,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.json.JSONWithComment;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
+import org.dreamcat.common.reflect.ObjectRandomGenerator;
 import org.dreamcat.common.reflect.ObjectType;
 
 /**
@@ -24,12 +27,14 @@ import org.dreamcat.common.reflect.ObjectType;
  */
 class ApiParamParser extends BaseParser {
 
-    final ApiDocParser apiDocParser;
+    final ObjectRandomGenerator randomGenerator;
+    final CommentJavaParser commentJavaParser;
     final ApiParamFieldParser apiParamFieldParser;
 
     public ApiParamParser(ApiDocParser apiDocParser) {
         super(apiDocParser.config, apiDocParser.classLoader);
-        this.apiDocParser = apiDocParser;
+        this.randomGenerator = apiDocParser.randomGenerator;
+        this.commentJavaParser = apiDocParser.commentJavaParser;
         this.apiParamFieldParser = new ApiParamFieldParser(apiDocParser);
     }
 
@@ -41,7 +46,7 @@ class ApiParamParser extends BaseParser {
         outputParam.setComment(methodDef.getReturnComment());
         // extra info
         outputParam.setFields(apiParamFieldParser.resolveParamField(returnType));
-        outputParam.setJsonWithComment(apiDocParser.toJSONWithComment(returnType));
+        outputParam.setJsonWithComment(toJSONWithComment(returnType));
         return outputParam;
     }
 
@@ -69,7 +74,7 @@ class ApiParamParser extends BaseParser {
         apiParam.setComment(parameter.getComment());
         apiParam.setFieldName(parameter.getName());
         apiParam.setFieldType(type.getType().getName());
-        apiParam.setJsonWithComment(apiDocParser.toJSONWithComment(type));
+        apiParam.setJsonWithComment(toJSONWithComment(type));
         apiParam.setFields(apiParamFieldParser.resolveParamField(type));
 
         parseFieldDoc(objectParameter.getParameter(), apiParam);
@@ -138,6 +143,15 @@ class ApiParamParser extends BaseParser {
             if (comment != null) apiParam.setComment(comment.toString());
             Object required = invokeAnno(annoObj, fieldDoc.getRequiredMethod());
             if (required != null) apiParam.setRequired(Objects.equals(required, true));
+        }
+    }
+
+    private String toJSONWithComment(ObjectType type) {
+        try {
+            Object bean = randomGenerator.generate(type);
+            return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
+        } catch (Exception ignore) {
+            return null;
         }
     }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectField;
 import org.dreamcat.common.reflect.ObjectType;
@@ -16,11 +17,11 @@ import org.dreamcat.common.reflect.ObjectType;
  */
 class ApiParamFieldParser extends BaseParser {
 
-    final ApiDocParser apiDocParser;
+    final CommentJavaParser commentJavaParser;
 
     public ApiParamFieldParser(ApiDocParser apiDocParser) {
         super(apiDocParser.config, apiDocParser.classLoader);
-        this.apiDocParser = apiDocParser;
+        this.commentJavaParser = apiDocParser.commentJavaParser;
     }
 
     private final Map<ObjectType, List<ApiParamField>> paramFieldCache = new ConcurrentHashMap<>();
@@ -38,7 +39,7 @@ class ApiParamFieldParser extends BaseParser {
         List<ApiParamField> paramFields = new ArrayList<>(fieldMap.size());
         for (ObjectField objectField : fieldMap.values()) {
             Field field = objectField.getField();
-            CommentFieldDef fieldDef = apiDocParser.commentJavaParser.resolveField(field);
+            CommentFieldDef fieldDef = commentJavaParser.resolveField(field);
 
             ApiParamField paramField = new ApiParamField();
             paramField.setName(fieldDef.getName());

@@ -235,9 +235,4 @@ public class ApiDocParser extends BaseParser {
             }
         }
     }
-
-    String toJSONWithComment(ObjectType type) {
-        Object bean = randomGenerator.generate(type);
-        return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
-    }
 }

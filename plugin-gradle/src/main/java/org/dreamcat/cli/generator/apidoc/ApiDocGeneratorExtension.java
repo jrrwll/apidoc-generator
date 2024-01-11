@@ -30,8 +30,6 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract ListProperty<String> getJavaFileDirs(); // required
 
-    abstract Property<Boolean> getUseRelativeJavaFilePath();
-
     abstract ListProperty<String> getIgnoreInputParamTypes();
 
     abstract Property<Boolean> getMergeInputParam();
@@ -42,7 +40,6 @@ public abstract class ApiDocGeneratorExtension {
 
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
-        getUseRelativeJavaFilePath().convention(true);
         getIgnoreInputParamTypes().convention(Arrays.asList(
                 "org.springframework.web.multipart.MultipartFile",
                 "[B"

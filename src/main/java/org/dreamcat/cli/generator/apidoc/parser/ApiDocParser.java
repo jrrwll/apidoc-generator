@@ -25,11 +25,9 @@ import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.common.Pair;
 import org.dreamcat.common.io.PathUtil;
-import org.dreamcat.common.json.JSONWithComment;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
-import org.dreamcat.common.reflect.ObjectType;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
@@ -70,16 +68,19 @@ public class ApiDocParser extends BaseParser {
         List<String> javaFileDirs = config.getJavaFileDirs();
         List<String> srcDirs = config.getSrcDirs();
 
-        String userDir = System.getProperty("user.dir");
-        boolean relative = config.isUseRelativeJavaFilePath();
-        if (relative) {
-            javaFileDirs = PathUtil.crossJoin(srcDirs, javaFileDirs);
+        List<String> fileDirs = new ArrayList<>();
+        for (String javaFileDir : javaFileDirs) {
+            if (javaFileDir.startsWith("/")) {
+                fileDirs.add(javaFileDir);
+            } else {
+                fileDirs.addAll(PathUtil.crossJoin(srcDirs, Collections.singletonList(javaFileDir)));
+            }
         }
 
         ApiDoc apiDoc = new ApiDoc();
         Map<String, ApiGroup> groupMap = new LinkedHashMap<>();
-        for (String javaFileDir : javaFileDirs) {
-            File dir = relative ? new File(userDir, javaFileDir) : new File(javaFileDir);
+        for (String javaFileDir : fileDirs) {
+            File dir = new File(javaFileDir);
             File[] files;
             if (!dir.exists() || ObjectUtil.isEmpty(files = dir.listFiles())) {
                 log.warn("no java files in {}", dir.getAbsolutePath());

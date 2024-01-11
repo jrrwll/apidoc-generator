@@ -136,7 +136,6 @@ public class ApiDocGeneratorTask extends DefaultTask {
         }
         config.setJavaFileDirs(extension.getJavaFileDirs().get());
 
-        config.setUseRelativeJavaFilePath(extension.getUseRelativeJavaFilePath().get());
         config.setIgnoreInputParamTypes(new HashSet<>(extension.getIgnoreInputParamTypes().get()));
         if (extension.getMergeInputParam().getOrElse(false)) {
             config.setMergeInputParam(MergeInputParam.flatType());

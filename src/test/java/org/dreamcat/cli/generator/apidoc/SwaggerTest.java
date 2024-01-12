@@ -16,8 +16,8 @@ class SwaggerTest {
 
     @Test
     void testController() throws Exception {
-        String javaFileDir = srcDir + "/com/example/controller";
-        List<String> basePackages = Collections.singletonList("com.example");
+        String javaFileDir = srcDir + "/com/example/biz/controller";
+        List<String> basePackages = Collections.singletonList("com.example.biz");
 
         ApiDocParseConfig config = new ApiDocParseConfig();
         config.setBasePackages(basePackages);

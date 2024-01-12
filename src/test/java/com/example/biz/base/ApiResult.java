@@ -1,4 +1,4 @@
-package com.example.base;
+package com.example.biz.base;
 
 import lombok.Data;
 

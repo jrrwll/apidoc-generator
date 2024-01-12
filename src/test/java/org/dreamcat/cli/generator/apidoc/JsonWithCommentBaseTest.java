@@ -12,7 +12,7 @@ import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 public class JsonWithCommentBaseTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
-    List<String> basePackages = Collections.singletonList("com.example");
+    List<String> basePackages = Collections.singletonList("com.example.biz");
 
     JsnoWithCommentRenderer createRenderer() {
         return new JsnoWithCommentRenderer();

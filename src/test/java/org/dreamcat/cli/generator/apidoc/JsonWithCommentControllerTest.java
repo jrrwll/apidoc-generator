@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
  */
 public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
-    String javaFileDir = srcDir + "/com/example/controller";
+    String javaFileDir = srcDir + "/com/example/biz/controller";
 
     @Test
     void test1() throws Exception {

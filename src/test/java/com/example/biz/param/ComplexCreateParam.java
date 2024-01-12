@@ -1,4 +1,4 @@
-package com.example.param;
+package com.example.biz.param;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -1,6 +1,6 @@
-package com.example.param;
+package com.example.biz.param;
 
-import com.example.base.PageParam;
+import com.example.biz.base.PageParam;
 import java.util.Set;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class TextTemplateTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
-    List<String> basePackages = Collections.singletonList("com.example");
+    List<String> basePackages = Collections.singletonList("com.example.biz");
 
     static final String template = FunctionUtil.invokeOrNull(() -> ClassPathUtil.getResourceAsString(
             "IndentedTable.ftl"));
@@ -29,22 +29,22 @@ class TextTemplateTest {
 
     @Test
     void testController() throws Exception {
-        generate(template, srcDir + "/com/example/controller");
+        generate(template, srcDir + "/com/example/biz/controller");
     }
 
     @Test
     void testService() throws Exception {
-        generate(template, srcDir + "/com/example/service");
+        generate(template, srcDir + "/com/example/biz/service");
     }
 
     @Test
     void testJWCController() throws Exception {
-        generate(jwc_template, srcDir + "/com/example/controller");
+        generate(jwc_template, srcDir + "/com/example/biz/controller");
     }
 
     @Test
     void testJWCService() throws Exception {
-        generate(jwc_template, srcDir + "/com/example/service");
+        generate(jwc_template, srcDir + "/com/example/biz/service");
     }
 
     void generate(String template, String javaFileDir) throws Exception {

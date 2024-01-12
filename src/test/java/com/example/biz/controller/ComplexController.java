@@ -1,11 +1,11 @@
-package com.example.controller;
+package com.example.biz.controller;
 
-import com.example.base.ApiPageSummary;
-import com.example.base.ApiResult;
-import com.example.param.ComplexCreateParam;
-import com.example.param.ComplexListParam;
-import com.example.result.ComplexModel;
-import com.example.result.ComplexSummaryModel;
+import com.example.biz.base.ApiPageSummary;
+import com.example.biz.base.ApiResult;
+import com.example.biz.param.ComplexCreateParam;
+import com.example.biz.param.ComplexListParam;
+import com.example.biz.result.ComplexModel;
+import com.example.biz.result.ComplexSummaryModel;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

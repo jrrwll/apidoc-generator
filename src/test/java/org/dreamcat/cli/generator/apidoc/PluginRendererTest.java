@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class PluginRendererTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
-    List<String> basePackages = Collections.singletonList("com.example");
+    List<String> basePackages = Collections.singletonList("com.example.biz");
     String path = "simple-renderer-plugin/build/dep";
     String className = "org.dreamcat.cli.generator.apidoc.renderer.SimpleRenderer";
 
@@ -25,7 +25,7 @@ class PluginRendererTest {
                 path, className, MapUtil.of("a", 1, "b", 3.14,
                         "c", true, "d", Arrays.asList("pi", "e"),
                         "e", MapUtil.of("x", 1, "y", Collections.emptyList(), "z", "abc")));
-        generate(renderer, srcDir + "/com/example/controller");
+        generate(renderer, srcDir + "/com/example/biz/controller");
     }
 
     void generate(ApiDocRenderer renderer, String javaFileDir) throws Exception {

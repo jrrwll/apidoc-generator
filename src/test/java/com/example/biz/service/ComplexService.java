@@ -1,12 +1,12 @@
-package com.example.service;
+package com.example.biz.service;
 
-import com.example.base.ApiContext;
-import com.example.base.ApiPageSummary;
-import com.example.base.ApiResult;
-import com.example.param.ComplexCreateParam;
-import com.example.param.ComplexListParam;
-import com.example.result.ComplexModel;
-import com.example.result.ComplexSummaryModel;
+import com.example.biz.base.ApiContext;
+import com.example.biz.base.ApiPageSummary;
+import com.example.biz.base.ApiResult;
+import com.example.biz.param.ComplexCreateParam;
+import com.example.biz.param.ComplexListParam;
+import com.example.biz.result.ComplexModel;
+import com.example.biz.result.ComplexSummaryModel;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 

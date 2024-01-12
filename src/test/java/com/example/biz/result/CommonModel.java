@@ -1,4 +1,4 @@
-package com.example.result;
+package com.example.biz.result;
 
 import java.util.Date;
 import lombok.Getter;

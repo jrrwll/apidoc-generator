@@ -1,5 +1,6 @@
-package com.example.base;
+package com.example.biz.base;
 
+import com.example.base.BaseParam;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,7 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class PageParam {
+public class PageParam extends BaseParam {
 
     private int pageNo = 1; // page number, default is 1
     private int pageSize = 10; // page size, default is 10

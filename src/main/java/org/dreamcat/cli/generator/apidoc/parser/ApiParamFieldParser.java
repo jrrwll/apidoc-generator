@@ -42,8 +42,12 @@ class ApiParamFieldParser extends BaseParser {
             CommentFieldDef fieldDef = commentJavaParser.resolveField(field);
 
             ApiParamField paramField = new ApiParamField();
-            paramField.setName(fieldDef.getName());
-            paramField.setComment(fieldDef.getComment());
+            if (fieldDef != null) {
+                paramField.setName(fieldDef.getName());
+                paramField.setComment(fieldDef.getComment());
+            } else {
+                paramField.setName(field.getName());
+            }
             paramField.setTypeName(field.getType().getSimpleName());
             paramField.setRequired(isValidationRequired(field));
 

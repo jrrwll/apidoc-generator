@@ -36,8 +36,6 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract Property<Boolean> getAutoDetect();
 
-    abstract ListProperty<String> getValidation();
-
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
         getIgnoreInputParamTypes().convention(Arrays.asList(

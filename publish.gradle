@@ -27,17 +27,19 @@ tasks.withType(Sign) {
 }
 
 task sourcesJar(type: Jar) {
+    onlyIf { isReleaseVersion }
     archiveClassifier.set 'sources'
     from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
+    onlyIf { isReleaseVersion }
     archiveClassifier.set 'javadoc'
     from javadoc.destinationDir
 }
 
-artifacts {
-    if (isReleaseVersion) {
+if (isReleaseVersion) {
+    artifacts {
         archives javadocJar, sourcesJar
     }
 }
@@ -67,8 +69,10 @@ publishing {
         mavenJava(MavenPublication) {
             // components.web for war
             from components.java
-            artifact sourcesJar
-            artifact javadocJar
+            if (isReleaseVersion) {
+                artifact sourcesJar
+                artifact javadocJar
+            }
 
             versionMapping {
                 usage('java-api') {

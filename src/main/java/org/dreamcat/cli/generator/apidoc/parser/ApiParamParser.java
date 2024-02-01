@@ -15,7 +15,7 @@ import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
-import org.dreamcat.common.json.JSONWithComment;
+import org.dreamcat.common.json.JSON;
 import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
@@ -149,7 +149,7 @@ class ApiParamParser extends BaseParser {
     private String toJSONWithComment(ObjectType type) {
         try {
             Object bean = randomGenerator.generate(type);
-            return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
+            return JSON.stringifyWithComment(bean, commentJavaParser::provideFieldComment);
         } catch (Exception ignore) {
             return null;
         }

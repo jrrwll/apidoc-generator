@@ -21,7 +21,7 @@
             <#list function.inputParams as inputParam>
                 <#if function.inputParamCount gt 1>**${inputParam.name}**<#if inputParam.comment??> ${inputParam.comment}</#if>${'\n'}</#if><#lt>
                 ```js<#lt>
-                  ${inputParam.jsonWithComment}<#lt><#if function.inputParamCount == 1 && inputParam.comment??> // ${inputParam.comment}</#if><#lt>
+                  ${inputParam.jsonWithComment!}<#lt><#if function.inputParamCount == 1 && inputParam.comment??> // ${inputParam.comment}</#if><#lt>
                 ```<#lt>
             </#list>
         </#if>
@@ -30,7 +30,7 @@
         - *Output Params*<#lt>
 
         ```js<#lt>
-          ${outputParam.jsonWithComment}<#if outputParam.comment??> // ${outputParam.comment}</#if><#lt>
+          ${outputParam.jsonWithComment!}<#if outputParam.comment??> // ${outputParam.comment}</#if><#lt>
         ```<#lt>
 
     </#list>

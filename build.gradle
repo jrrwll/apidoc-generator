@@ -39,7 +39,7 @@ allprojects {
         testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
         testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-        implementation 'org.dreamcat:common:0.4'
+        implementation 'org.dreamcat:common:0.5-SNAPSHOT'
     }
 }
 

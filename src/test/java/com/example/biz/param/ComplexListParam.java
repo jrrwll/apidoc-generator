@@ -5,6 +5,7 @@ import java.util.Set;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +26,7 @@ public class ComplexListParam extends PageParam {
      */
     private Ext ext;
 
+    @Data
     public static class Ext {
 
         // unix timestamp
@@ -33,6 +35,7 @@ public class ComplexListParam extends PageParam {
         private Ext2 ext2; /* ext2 */
     }
 
+    @Data
     public static class Ext2 {
 
         /* version */

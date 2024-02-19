@@ -27,11 +27,6 @@ public class CommentJavaParser {
         this(config.getSrcDirs(), config.getBasePackages());
     }
 
-    public String provideFieldComment(Field field) {
-        CommentFieldDef fieldDef = resolveField(field);
-        return fieldDef != null ? fieldDef.getComment() : null;
-    }
-
     public CommentFieldDef resolveField(Field field) {
         return fieldCache.computeIfAbsent(field, this::parseField);
     }

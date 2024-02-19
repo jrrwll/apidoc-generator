@@ -8,7 +8,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
@@ -145,6 +149,7 @@ public class ApiDocParseConfig {
     }
 
     @Data
+    @Accessors(chain = true)
     public static class FunctionDoc {
 
         private String name;
@@ -156,6 +161,7 @@ public class ApiDocParseConfig {
     }
 
     @Data
+    @Accessors(chain = true)
     public static class FieldDoc {
 
         private String name;

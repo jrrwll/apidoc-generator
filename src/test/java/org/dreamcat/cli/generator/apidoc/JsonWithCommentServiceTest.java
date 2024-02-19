@@ -1,5 +1,7 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import java.util.Arrays;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 import org.dreamcat.common.util.SetUtil;
@@ -51,6 +53,17 @@ class JsonWithCommentServiceTest extends JsonWithCommentBaseTest {
     void testMergeInput() throws Exception {
         ApiDocParseConfig config = createConfig(javaFileDir);
         config.setMergeInputParam(MergeInputParam.flatType());
+
+        JsnoWithCommentRenderer renderer = createRenderer();
+        generate(config, renderer);
+    }
+
+    @Test
+    void testFieldDoc() throws Exception {
+        ApiDocParseConfig config = createConfig(javaFileDir);
+        config.setFieldDoc(Arrays.asList(
+                new FieldDoc().setName("com.fasterxml.jackson.annotation.JsonProperty"),
+                new FieldDoc().setName("com.example.annotation.FieldDoc")));
 
         JsnoWithCommentRenderer renderer = createRenderer();
         generate(config, renderer);

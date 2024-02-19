@@ -1,5 +1,6 @@
 package org.dreamcat.cli.generator.apidoc.parser;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
@@ -149,9 +151,14 @@ class ApiParamParser extends BaseParser {
     private String toJSONWithComment(ObjectType type) {
         try {
             Object bean = randomGenerator.generate(type);
-            return JSON.stringifyWithComment(bean, commentJavaParser::provideFieldComment);
+            return JSON.stringifyWithComment(bean, this::provideFieldComment);
         } catch (Exception ignore) {
             return null;
         }
+    }
+
+    private String provideFieldComment(Field field) {
+        CommentFieldDef fieldDef = commentJavaParser.resolveField(field);
+        return fieldDef != null ? fieldDef.getComment() : null;
     }
 }

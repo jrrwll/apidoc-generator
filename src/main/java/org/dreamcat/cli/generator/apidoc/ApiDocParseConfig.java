@@ -24,7 +24,7 @@ public class ApiDocParseConfig {
     private boolean verbose;
     private List<String> basePackages = Collections.singletonList(""); // java files dirs
     private List<String> srcDirs; // source dir
-    // service class dir, /a/b/c for absolute path and a/b/c for relative path
+    // service class dir/file, /a/b/c for absolute path and a/b/c for relative path
     private List<String> javaFileDirs;
     private Set<String> ignoreInputParamTypes; // ignore input params
     private MergeInputParam mergeInputParam; // when to use indented table

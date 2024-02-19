@@ -31,9 +31,9 @@ class ApiParamParser extends BaseParser {
     final CommentJavaParser commentJavaParser;
     final ApiParamFieldParser apiParamFieldParser;
 
-    public ApiParamParser(ApiDocParser apiDocParser) {
+    public ApiParamParser(ApiDocParser apiDocParser, ObjectRandomGenerator randomGenerator) {
         super(apiDocParser.config, apiDocParser.classLoader);
-        this.randomGenerator = apiDocParser.randomGenerator;
+        this.randomGenerator = randomGenerator;
         this.commentJavaParser = apiDocParser.commentJavaParser;
         this.apiParamFieldParser = new ApiParamFieldParser(apiDocParser);
     }

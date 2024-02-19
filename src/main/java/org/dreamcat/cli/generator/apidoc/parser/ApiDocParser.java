@@ -40,7 +40,6 @@ public class ApiDocParser extends BaseParser {
 
     final CommentJavaParser commentJavaParser;
     final ApiParamParser apiParamParser;
-    final ObjectRandomGenerator randomGenerator;
 
     public ApiDocParser(ApiDocParseConfig config) {
         this(config, (ClassLoader)null);
@@ -59,8 +58,7 @@ public class ApiDocParser extends BaseParser {
         super(config, classLoader);
         this.config.afterPropertySet(classLoader);
         this.commentJavaParser = new CommentJavaParser(config);
-        this.apiParamParser = new ApiParamParser(this);
-        this.randomGenerator = randomGenerator;
+        this.apiParamParser = new ApiParamParser(this, randomGenerator);
     }
 
     @SneakyThrows
@@ -82,7 +80,13 @@ public class ApiDocParser extends BaseParser {
         for (String javaFileDir : fileDirs) {
             File dir = new File(javaFileDir);
             File[] files;
-            if (!dir.exists() || ObjectUtil.isEmpty(files = dir.listFiles())) {
+            if (!dir.exists()) {
+                log.warn("java dir not found: {}", dir.getAbsolutePath());
+                continue;
+            }
+            if (dir.isFile()) {
+                files = new File[]{dir};
+            } else if (ObjectUtil.isEmpty(files = dir.listFiles())) {
                 log.warn("no java files in {}", dir.getAbsolutePath());
                 continue;
             }

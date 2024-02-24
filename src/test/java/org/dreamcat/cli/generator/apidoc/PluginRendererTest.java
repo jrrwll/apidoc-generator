@@ -16,13 +16,12 @@ class PluginRendererTest {
 
     String srcDir = new File("src/test/java").getAbsolutePath();
     List<String> basePackages = Collections.singletonList("com.example.biz");
-    String path = "simple-renderer-plugin/build/dep";
-    String className = "org.dreamcat.cli.generator.apidoc.renderer.SimpleRenderer";
+    String path = new File("simple-renderer-plugin/build/dep").getAbsolutePath();
 
     @Test
     void testController() throws Exception {
         ApiDocRenderer renderer = ApiDocRenderer.loadFromPath(
-                path, className, MapUtil.of("a", 1, "b", 3.14,
+                path, MapUtil.of("a", 1, "b", 3.14,
                         "c", true, "d", Arrays.asList("pi", "e"),
                         "e", MapUtil.of("x", 1, "y", Collections.emptyList(), "z", "abc")));
         generate(renderer, srcDir + "/com/example/biz/controller");

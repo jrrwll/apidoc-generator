@@ -3,18 +3,25 @@ package org.dreamcat.cli.generator.apidoc.renderer;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
+import org.dreamcat.common.io.IOUtil;
 import org.dreamcat.common.io.UrlUtil;
+import org.dreamcat.common.javac.FileClassLoader;
 import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.util.ClassLoaderUtil;
+import org.dreamcat.common.util.ClassPathUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
@@ -41,30 +48,24 @@ public interface ApiDocRenderer {
         }
     }
 
-    static ApiDocRenderer loadFromPath(String path, String className,
-            Map<String, Object> injectedArgs) {
-        return loadFromPath(path, className, injectedArgs,
+    static ApiDocRenderer loadFromPath(String path,
+            Map<String, Object> injectedArgs) throws Exception {
+        return loadFromPath(path, injectedArgs,
                 Thread.currentThread().getContextClassLoader());
     }
 
-    @SneakyThrows
     @SuppressWarnings("unchecked")
-    static ApiDocRenderer loadFromPath(String path, String className,
-            Map<String, Object> injectedArgs, ClassLoader classLoader) {
-        File file = new File(path);
-        List<URL> urls = new ArrayList<>();
-        if (file.isDirectory()) {
-            File[] subFiles = Objects.requireNonNull(file.listFiles(),
-                    "listFiles is null: " + path);
-            for (File subFile : subFiles) {
-                urls.add(UrlUtil.toURL(subFile.toURI()));
-            }
-        } else {
-            urls.add(UrlUtil.toURL(file.toURI()));
+    static ApiDocRenderer loadFromPath(String path,
+            Map<String, Object> injectedArgs, ClassLoader classLoader) throws Exception {
+        ClassLoader cl = ClassLoaderUtil.fromDir(path, classLoader);
+
+        String className = ClassPathUtil.getServicesName(ApiDocRenderer.class.getName(), cl);
+        if (className == null) {
+            throw new RemoteException("SPI " + ApiDocRenderer.class.getName() +
+                    " is not found in path: " + path);
         }
-        URLClassLoader cl = new URLClassLoader(urls.toArray(new URL[0]), classLoader);
+
         Class<ApiDocRenderer> rendererClass = (Class<ApiDocRenderer>) cl.loadClass(className);
-        // todo optimize
         if (ObjectUtil.isNotEmpty(injectedArgs)) {
             return JsonUtil.fromMap(injectedArgs, rendererClass);
         } else {

@@ -20,13 +20,7 @@ public abstract class ApiDocGeneratorExtension {
 
     abstract Property<Boolean> getRewrite();
 
-    abstract ListProperty<String> getClassDirs(); // class dir
-
-    abstract ListProperty<String> getJarDirs(); // jar dir
-
     abstract ListProperty<String> getBasePackages();
-
-    abstract ListProperty<String> getSrcDirs();
 
     abstract ListProperty<String> getJavaFileDirs(); // required
 
@@ -124,22 +118,14 @@ public abstract class ApiDocGeneratorExtension {
         abstract Property<String> getDefaultTitle();
 
         abstract Property<String> getDefaultVersion();
-
-        abstract Property<String> getFieldNameAnnotation();
-
-        abstract ListProperty<String> getFieldNameAnnotationName();
-
-        abstract Property<Boolean> getUseJacksonFieldNameGetter();
     }
 
     public abstract static class RendererPlugin {
 
         abstract Property<String> getPath();
 
-        abstract Property<String> getClassName();
-
         //  support to inject env vars to string value
-        abstract MapProperty<String, Object> getConstructArgs();
+        abstract MapProperty<String, Object> getInjectedArgs();
     }
 
     public interface Http {

@@ -13,17 +13,21 @@ plugins {
     id 'org.dreamcat.apidoc-generator' version '0.4-SNAPSHOT'
 }
 
-def gradleRepo = "${System.getenv('HOME')}/.gradle/caches/modules-2/files-2.1"
+sourceSets {
+    main {
+        java {
+            srcDir '../..、src/test/java'
+            srcDir 'gen-java'
+        }
+    }
+}
+
+dependencies {
+    implementation "org.springframework:spring-core:5.3.31"
+    implementation "org.springframework:spring-web:5.3.31"
+}
 
 apidocGenerate {
-    classDirs = [
-            '../../build/classes/java/test',
-    ]
-    jarDirs = [
-            "$gradleRepo/org.springframework/spring-web/5.3.31",
-            "$gradleRepo/org.springframework/spring-core/5.3.31"
-    ]
-    srcDirs = ['../../src/test/java']
     javaFileDirs = ['com/example/controller']
     mergeInputParam = true
     swagger {

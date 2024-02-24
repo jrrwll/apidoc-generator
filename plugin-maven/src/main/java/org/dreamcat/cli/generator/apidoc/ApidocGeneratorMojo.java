@@ -1,12 +1,14 @@
 package org.dreamcat.cli.generator.apidoc;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
  * @author Jerry Will
@@ -17,55 +19,54 @@ import org.apache.maven.plugins.annotations.Parameter;
 @Mojo(name = "apidocGenerate")
 public class ApidocGeneratorMojo extends AbstractMojo {
 
+    @Parameter( defaultValue = "${project}", readonly = true )
+    private MavenProject project;
+
+    @Parameter(defaultValue = "false")
+    private Boolean verbose;
     @Parameter
     private String outputPath;
     @Parameter(defaultValue = "false")
     private Boolean rewrite;
     @Parameter
-    private List<String> classDirs;
-    @Parameter
-    private List<String> jarDirs;
-    @Parameter
     private List<String> basePackages;
-    @Parameter
-    private List<String> srcDirs;
     @Parameter(required = true)
     private List<String> javaFileDirs;
-    @Parameter(defaultValue = "true")
-    private Boolean useRelativeJavaFilePath;
     @Parameter
     private List<String> ignoreInputParamTypes;
     @Parameter(defaultValue = "false")
-    private Boolean enableMergeInputParam;
+    private Boolean mergeInputParam;
     @Parameter(defaultValue = "true")
-    private Boolean enableSpringWeb;
+    private Boolean autoDetect;
+
     @Parameter
-    private Text text;
+    private JsonWithComment jsonWithComment;
     @Parameter
     private Swagger swagger;
+    @Parameter
+    private RendererPlugin rendererPlugin;
+
+
 
     public void execute() throws MojoExecutionException {
         new ApidocGeneratorAction(this).run();
     }
 
-    // @Parameter( defaultValue = "${project}", readonly = true )
-    // private MavenProject project;
-
     @Data
-    public static class Text {
+    public static class JsonWithComment {
 
-        @Parameter(defaultValue = "true")
-        private Boolean enabled;
-        @Parameter
-        private Boolean enableIndentedTable;
         @Parameter
         private String template;
+        @Parameter
+        private Map<String, String> includeTemplates;
+        @Parameter(defaultValue = "false")
+        private Boolean fieldsNoRequired;
+        @Parameter(defaultValue = "false")
+        private Boolean outputParamAsIndentedTable;
         @Parameter
         private String nameHeader;
         @Parameter
         private String functionHeader;
-        @Parameter
-        private String paramHeader;
         @Parameter
         private String inputParamTitle;
         @Parameter
@@ -78,6 +79,8 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         @Parameter
         private Integer maxNestLevel;
         @Parameter
+        private String indentSpace;
+        @Parameter
         private String indentPrefix;
         @Parameter
         private String indentName;
@@ -85,8 +88,6 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         private String indentType;
         @Parameter
         private String indentRequired;
-        @Parameter
-        private String indentComment;
         @Parameter
         private String requiredTrue;
         @Parameter
@@ -102,11 +103,15 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         private String defaultTitle;
         @Parameter
         private String defaultVersion;
+    }
+
+    @Data
+    public static class RendererPlugin {
+
         @Parameter
-        private String fieldNameAnnotation;
+        private String path;
+        // json object
         @Parameter
-        private List<String> fieldNameAnnotationName;
-        @Parameter(defaultValue = "false")
-        private Boolean useJacksonFieldNameGetter;
+        private String injectedArgs;
     }
 }

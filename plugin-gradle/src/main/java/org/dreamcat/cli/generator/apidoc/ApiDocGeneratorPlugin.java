@@ -15,7 +15,7 @@ public class ApiDocGeneratorPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        // ApiDocGeneratorExtension extension =
+        // Property<?> or getter/setter pojo
         project.getExtensions().create(name, ApiDocGeneratorExtension.class);
 
         // project.getTasks().create(name, ApiDocGeneratorTask.class, project, extension);

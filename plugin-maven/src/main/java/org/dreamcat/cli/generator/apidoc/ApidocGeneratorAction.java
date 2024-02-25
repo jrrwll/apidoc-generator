@@ -32,8 +32,9 @@ public class ApidocGeneratorAction implements Runnable {
 
     @SneakyThrows
     public void run() {
-        ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(project);
-        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project);
+        ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(
+                project, mojo.getLocalRepository(), mojo.getVerbose(), log);
+        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project, log);
 
         Swagger swagger = mojo.getSwagger();
         // swagger
@@ -51,6 +52,7 @@ public class ApidocGeneratorAction implements Runnable {
         }
 
         JsonWithComment jwc = mojo.getJsonWithComment();
+        if (jwc == null) jwc = new JsonWithComment();
         ApiDocRenderer renderer = ApiDocGeneratorUtil.buildJsonWithCommentRenderer(jwc);
         output(config, renderer, userCodeClassLoader);
     }
@@ -58,8 +60,9 @@ public class ApidocGeneratorAction implements Runnable {
     private void output(
             ApiDocParseConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader) throws Exception {
-        logInfo("generate with config: {}, renderer: {}",
-                JsonUtil.toJson(config), renderer.getClass().getSimpleName());
+        log.info("renderer: " + renderer.getClass().getName());
+        log.info("generate with config:\n" +
+                JsonUtil.toJsonWithPretty(config));
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
         String doc = generator.generate();

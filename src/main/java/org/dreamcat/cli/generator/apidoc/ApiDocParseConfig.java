@@ -1,5 +1,7 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import org.dreamcat.common.util.ReflectUtil;
  * @version 2021-12-09
  */
 @Data
+@JsonInclude(Include.NON_EMPTY)
 public class ApiDocParseConfig {
 
     // parser
@@ -98,6 +101,7 @@ public class ApiDocParseConfig {
 
 
     @Data
+    @JsonInclude(Include.NON_EMPTY)
     public static class MergeInputParam {
 
         // regexp to match ${className}.${methodName}
@@ -128,6 +132,7 @@ public class ApiDocParseConfig {
     }
 
     @Data
+    @JsonInclude(Include.NON_EMPTY)
     public static class Http {
 
         private String path;
@@ -141,6 +146,7 @@ public class ApiDocParseConfig {
     }
 
     @Data
+    @JsonInclude(Include.NON_EMPTY)
     public static class Validation {
 
         private String notNull;
@@ -150,6 +156,7 @@ public class ApiDocParseConfig {
 
     @Data
     @Accessors(chain = true)
+    @JsonInclude(Include.NON_EMPTY)
     public static class FunctionDoc {
 
         private String name;
@@ -162,6 +169,7 @@ public class ApiDocParseConfig {
 
     @Data
     @Accessors(chain = true)
+    @JsonInclude(Include.NON_EMPTY)
     public static class FieldDoc {
 
         private String name;

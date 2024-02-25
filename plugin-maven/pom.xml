@@ -149,6 +149,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -166,3 +169,16 @@
     </repository>
   </distributionManagement>
 </project>
+<!--
+# create a maven-plugin project
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=apidoc-generator-maven-plugin \
+    -DarchetypeArtifactId=maven-archetype-mojo \
+    -DinteractiveMode=false
+
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=plugin-maven-example \
+    -DinteractiveMode=false
+-->

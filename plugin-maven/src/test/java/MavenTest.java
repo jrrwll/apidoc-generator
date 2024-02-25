@@ -1,6 +1,8 @@
 import java.util.List;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -9,6 +11,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.eclipse.aether.graph.DependencyNode;
 
 /**
  * @author Jerry Will
@@ -23,7 +26,7 @@ public class MavenTest extends AbstractMojo {
     private List<MavenProject> reactorProjects;
 
     @Parameter(defaultValue = "${mojoExecution}")
-    private MojoExecution mojoEx;
+    private MojoExecution mojoExecution;
 
     @Component
     protected RepositorySystem repositorySystem;
@@ -40,5 +43,6 @@ public class MavenTest extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         // nop
+        localRepository.getBasedir();
     }
 }

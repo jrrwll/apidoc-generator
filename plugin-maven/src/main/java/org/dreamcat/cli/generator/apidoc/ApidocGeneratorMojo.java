@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 
 /**
  * @author Jerry Will
@@ -19,8 +22,12 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "apidocGenerate")
 public class ApidocGeneratorMojo extends AbstractMojo {
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
+    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
+    private ArtifactRepository localRepository;
+    @Component
+    protected RepositorySystem repositorySystem;
 
     @Parameter(defaultValue = "false")
     private Boolean verbose;
@@ -46,7 +53,12 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     @Parameter
     private RendererPlugin rendererPlugin;
 
-
+    @Parameter
+    private List<Http> httpList;
+    @Parameter
+    private List<FunctionDoc> functionDocList;
+    @Parameter
+    private List<FieldDoc> fieldDocList;
 
     public void execute() throws MojoExecutionException {
         new ApidocGeneratorAction(this).run();
@@ -113,5 +125,56 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         // json object
         @Parameter
         private String injectedArgs;
+    }
+
+    @Data
+    public static class Http {
+
+        @Parameter
+        private String path;
+        @Parameter
+        private List<String> pathMethod;
+        @Parameter
+        private String action;
+        @Parameter
+        private List<String> actionMethod;
+        @Parameter
+        private String pathVar;
+        @Parameter
+        private List<String> pathVarMethod;
+        @Parameter
+        private String required;
+        @Parameter
+        private List<String> requiredMethod;
+    }
+
+    @Data
+    public static class FunctionDoc {
+
+        @Parameter
+        private String annotationName;
+        @Parameter
+        private List<String> commentMethod;
+        @Parameter
+        private List<String> nestedParamMethod;
+        @Parameter
+        private List<String> nestedParamNameMethod;
+        @Parameter
+        private List<String> nestedParamCommentMethod;
+        @Parameter
+        private List<String> nestedParamRequiredMethod;
+    }
+
+    @Data
+    public static class FieldDoc {
+
+        @Parameter
+        private String annotationName;
+        @Parameter
+        private List<String> nameMethod;
+        @Parameter
+        private List<String> commentMethod;
+        @Parameter
+        private List<String> requiredMethod;
     }
 }

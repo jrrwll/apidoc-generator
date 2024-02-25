@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,9 +12,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
@@ -37,33 +41,54 @@ import org.dreamcat.common.util.ObjectUtil;
  */
 public class ApiDocGeneratorUtil {
 
-    public static ClassLoader buildUserCodeClassLoader(MavenProject project) throws Exception{
-        File classDir = MavenUtil.getClassDir(project);
-        List<String> classpath = MavenUtil.getCompileClasspath(project);
+    public static ClassLoader buildUserCodeClassLoader(
+            MavenProject project, ArtifactRepository localRepository,
+            boolean verbose, Log log) throws Exception {
+        Set<String> classDirs = new HashSet<>();
+        classDirs.add(MavenUtil.getClassDir(project));
+        classDirs.addAll(orEmpty(MavenUtil.getCompileClasspath(project)));
+        classDirs.addAll(orEmpty(MavenUtil.getRuntimeClasspath(project)));
+        if (verbose) {
+            log.info("classDirs: " + classDirs);
+        }
 
-        URL[] urls = Stream.concat(Stream.of(classDir), classpath.stream().map(File::new))
+        List<File> dependencies = MavenUtil.getDependencies(project, localRepository);
+        if (verbose) {
+            log.info("dependencies: " + dependencies);
+        }
+
+        URL[] urls = Stream.concat(dependencies.stream(), classDirs.stream().map(File::new))
                 .map(UrlUtil::toURL).toArray(URL[]::new);
+        if (verbose) {
+            log.info("classLoader urls: " + Arrays.toString(urls));
+        }
         return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
 
-    public static ApiDocParseConfig buildApiDocConfig(ApidocGeneratorMojo mojo, MavenProject project)
+    public static ApiDocParseConfig buildApiDocConfig(
+            ApidocGeneratorMojo mojo, MavenProject project, Log log)
             throws IOException {
-        File srcDir = MavenUtil.getSrcDir(project);
+        String srcDir = MavenUtil.getSrcDir(project);
+        if (mojo.getVerbose()) {
+            log.info("srcDir: " + srcDir);
+        }
 
         ApiDocParseConfig config = new ApiDocParseConfig();
-        config.setSrcDirs(Collections.singletonList(srcDir.getAbsolutePath()));
+        config.setSrcDirs(Collections.singletonList(srcDir));
 
         setIf(config::setVerbose, mojo.getVerbose());
         setIf(config::setBasePackages, mojo.getBasePackages());
-        config.setJavaFileDirs(mojo.getJavaFileDirs().get());
+        config.setJavaFileDirs(mojo.getJavaFileDirs());
 
-        config.setIgnoreInputParamTypes(new HashSet<>(mojo.getIgnoreInputParamTypes()));
+        if (ObjectUtil.isNotEmpty(mojo.getIgnoreInputParamTypes())) {
+            config.setIgnoreInputParamTypes(new HashSet<>(mojo.getIgnoreInputParamTypes()));
+        }
         if (mojo.getMergeInputParam()) {
             config.setMergeInputParam(MergeInputParam.flatType());
         }
 
         config.setAutoDetect(mojo.getAutoDetect());
-        List<Http> httpList = mojo.getHttp().getAsMap().values().stream().map(it -> {
+        List<Http> httpList = orEmpty(mojo.getHttpList()).stream().map(it -> {
             Http http = new Http();
             setIf(http::setPath, it.getPath());
             setIf(http::setPathMethod, it.getPathMethod());
@@ -81,61 +106,59 @@ public class ApiDocGeneratorUtil {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!httpList.isEmpty()) config.setHttp(httpList);
 
-        List<FunctionDoc> functionDocs = mojo.getFunctionDoc()
-                .getAsMap().values().stream().map(it -> {
-                    FunctionDoc doc = new FunctionDoc();
-                    setIf(doc::setName, it.getAnnotationName());
-                    setIf(doc::setCommentMethod, it.getCommentMethod());
-                    setIf(doc::setNestedParamMethod, it.getNestedParamMethod());
-                    setIf(doc::setNestedParamNameMethod, it.getNestedParamNameMethod());
-                    setIf(doc::setNestedParamCommentMethod, it.getNestedParamCommentMethod());
-                    setIf(doc::setNestedParamRequiredMethod, it.getNestedParamRequiredMethod());
-                    if (doc.getName() == null) return null;
-                    return doc;
-                }).filter(Objects::nonNull).collect(Collectors.toList());
+        List<FunctionDoc> functionDocs = orEmpty(mojo.getFunctionDocList()).stream().map(it -> {
+            FunctionDoc doc = new FunctionDoc();
+            setIf(doc::setName, it.getAnnotationName());
+            setIf(doc::setCommentMethod, it.getCommentMethod());
+            setIf(doc::setNestedParamMethod, it.getNestedParamMethod());
+            setIf(doc::setNestedParamNameMethod, it.getNestedParamNameMethod());
+            setIf(doc::setNestedParamCommentMethod, it.getNestedParamCommentMethod());
+            setIf(doc::setNestedParamRequiredMethod, it.getNestedParamRequiredMethod());
+            if (doc.getName() == null) return null;
+            return doc;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFunctionDoc(functionDocs);
 
-        List<FieldDoc> fieldDocs = mojo.getFieldDoc()
-                .getAsMap().values().stream().map(it -> {
-                    FieldDoc doc = new FieldDoc();
-                    setIf(doc::setName, it.getAnnotationName());
-                    setIf(doc::setNameMethod, it.getNameMethod());
-                    setIf(doc::setCommentMethod, it.getCommentMethod());
-                    setIf(doc::setRequiredMethod, it.getRequiredMethod());
-                    if (doc.getName() == null) return null;
-                    return doc;
-                }).filter(Objects::nonNull).collect(Collectors.toList());
+        List<FieldDoc> fieldDocs = orEmpty(mojo.getFieldDocList()).stream().map(it -> {
+            FieldDoc doc = new FieldDoc();
+            setIf(doc::setName, it.getAnnotationName());
+            setIf(doc::setNameMethod, it.getNameMethod());
+            setIf(doc::setCommentMethod, it.getCommentMethod());
+            setIf(doc::setRequiredMethod, it.getRequiredMethod());
+            if (doc.getName() == null) return null;
+            return doc;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFieldDoc(fieldDocs);
         return config;
     }
 
-    public static ApiDocRenderer buildJsonWithCommentRenderer(JsonWithComment text) {
-        String template = text.getTemplate();
+    public static ApiDocRenderer buildJsonWithCommentRenderer(JsonWithComment jwc) {
+        String template = jwc.getTemplate();
         if (template != null) {
-            Map<String, String> includeTemplates = text.getIncludeTemplates();
+            Map<String, String> includeTemplates = jwc.getIncludeTemplates();
             if (includeTemplates == null) includeTemplates = Collections.emptyMap();
             return new TextTemplateRenderer(template, includeTemplates);
         }
 
         JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
-        setIf(renderer::setFieldsNoRequired, text.getFieldsNoRequired());
-        setIf(renderer::setOutputParamAsIndentedTable, text.getOutputParamAsIndentedTable());
+        setIf(renderer::setFieldsNoRequired, jwc.getFieldsNoRequired());
+        setIf(renderer::setOutputParamAsIndentedTable, jwc.getOutputParamAsIndentedTable());
 
-        setIf(renderer::setNameHeader, text.getNameHeader());
-        setIf(renderer::setFunctionHeader, text.getFunctionHeader());
-        setIf(renderer::setInputParamTitle, text.getInputParamTitle());
-        setIf(renderer::setOutputParamTitle, text.getOutputParamTitle());
-        setIf(renderer::setPinFunctionComment, text.getPinFunctionComment());
-        setIf(renderer::setSeqPrefix, text.getSeqPrefix());
+        setIf(renderer::setNameHeader, jwc.getNameHeader());
+        setIf(renderer::setFunctionHeader, jwc.getFunctionHeader());
+        setIf(renderer::setInputParamTitle, jwc.getInputParamTitle());
+        setIf(renderer::setOutputParamTitle, jwc.getOutputParamTitle());
+        setIf(renderer::setPinFunctionComment, jwc.getPinFunctionComment());
+        setIf(renderer::setSeqPrefix, jwc.getSeqPrefix());
 
-        setIf(renderer::setMaxNestLevel, text.getMaxNestLevel());
-        setIf(renderer::setIndentSpace, text.getIndentSpace());
-        setIf(renderer::setIndentPrefix, text.getIndentPrefix());
-        setIf(renderer::setIndentName, text.getIndentName());
-        setIf(renderer::setIndentType, text.getIndentType());
-        setIf(renderer::setIndentRequired, text.getIndentRequired());
-        setIf(renderer::setRequiredTrue, text.getRequiredTrue());
-        setIf(renderer::setRequiredFalse, text.getRequiredFalse());
+        setIf(renderer::setMaxNestLevel, jwc.getMaxNestLevel());
+        setIf(renderer::setIndentSpace, jwc.getIndentSpace());
+        setIf(renderer::setIndentPrefix, jwc.getIndentPrefix());
+        setIf(renderer::setIndentName, jwc.getIndentName());
+        setIf(renderer::setIndentType, jwc.getIndentType());
+        setIf(renderer::setIndentRequired, jwc.getIndentRequired());
+        setIf(renderer::setRequiredTrue, jwc.getRequiredTrue());
+        setIf(renderer::setRequiredFalse, jwc.getRequiredFalse());
         return renderer;
     }
 
@@ -171,5 +194,9 @@ public class ApiDocGeneratorUtil {
         if (val != null && (!(val instanceof Collection) || !((Collection<?>) val).isEmpty())) {
             setter.accept(val);
         }
+    }
+
+    private static <T> List<T> orEmpty(List<T> list) {
+        return list != null ? list : Collections.emptyList();
     }
 }

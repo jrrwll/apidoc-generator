@@ -1,5 +1,7 @@
 package org.dreamcat.cli.generator.apidoc.renderer;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -7,6 +9,7 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
@@ -16,7 +19,9 @@ import org.dreamcat.common.json.JsonUtil;
  * @author Jerry Will
  * @version 2022-07-11
  */
+@Getter
 @RequiredArgsConstructor
+@JsonInclude(Include.NON_EMPTY)
 public class TextTemplateRenderer implements ApiDocRenderer {
 
     private final String template;

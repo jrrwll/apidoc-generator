@@ -1,23 +1,17 @@
 > see [more](https://jrrwll.github.io/docs/tool/apidoc-generator/) on my [Blog](https://jrrwll.github.io/)
 
-### ops log
+## mavne pluginn
+
+### build
 
 ```shell
-# create a maven-plugin project
-mvn archetype:generate \
-    -DgroupId=org.dreamcat \
-    -DartifactId=apidoc-generator-maven-plugin \
-    -DarchetypeArtifactId=maven-archetype-mojo \
-    -DinteractiveMode=false
+export GPG_PASSPHRASE=xxx
+mvn install -Dmaven.test.skip=true
 ```
 
-```shell
-# create a project which use my maven-plugin
-mvn archetype:generate \
-    -DgroupId=org.dreamcat \
-    -DartifactId=plugin-maven-example \
-    -DinteractiveMode=false
+### usage
 
+```shell
 mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
 ```
 

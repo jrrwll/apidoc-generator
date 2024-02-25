@@ -1,9 +1,12 @@
 package org.dreamcat.cli.generator.apidoc.renderer;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
@@ -19,8 +22,10 @@ import org.dreamcat.common.util.StringUtil;
  * @author Jerry Will
  * @version 2022-07-11
  */
+@Getter
 @Setter
 @Accessors(chain = true)
+@JsonInclude(Include.NON_EMPTY)
 public class JsnoWithCommentRenderer implements ApiDocRenderer{
 
     // output style

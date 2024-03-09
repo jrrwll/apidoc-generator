@@ -16,6 +16,9 @@ import javax.validation.constraints.NotNull;
  */
 public interface ComplexService {
 
+    /// @addtogroup Complex查询接口
+    /// @{
+
     // get complex
     ApiResult<ComplexModel> get(
             @NotBlank(message = "id is required") String id);
@@ -34,6 +37,9 @@ public interface ComplexService {
     // list complex
     ApiResult<ApiPageSummary<ComplexModel, ComplexSummaryModel>> list(
             @NotNull(message = "param is required") ComplexListParam param);
+    /// @}
+    /// @addtogroup Complex修改接口
+    /// @{
 
     /**
      * create complex
@@ -54,4 +60,5 @@ public interface ComplexService {
     ApiResult<Void> delete(
             @NotBlank(message = "id is required") String id,
             @NotNull(message = "context is required") ApiContext context);
+    /// @}
 }

@@ -1,28 +1,29 @@
 package org.dreamcat.cli.generator.apidoc.parser;
 
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
+import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.reflect.ObjectField;
+import org.dreamcat.common.reflect.ObjectType;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.RequiredArgsConstructor;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Validation;
-import org.dreamcat.cli.generator.apidoc.javadoc.CommentFieldDef;
-import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
-import org.dreamcat.databind.type.ObjectField;
-import org.dreamcat.databind.type.ObjectType;
 
 /**
  * @author Jerry Will
  * @version 2022-07-11
  */
-@RequiredArgsConstructor
-public class ApiParamFieldParser {
+class ApiParamFieldParser extends BaseParser {
 
-    final ApiDocConfig config;
     final CommentJavaParser commentJavaParser;
+
+    public ApiParamFieldParser(ApiDocParser apiDocParser) {
+        super(apiDocParser.config, apiDocParser.classLoader);
+        this.commentJavaParser = apiDocParser.commentJavaParser;
+    }
 
     private final Map<ObjectType, List<ApiParamField>> paramFieldCache = new ConcurrentHashMap<>();
 
@@ -42,36 +43,21 @@ public class ApiParamFieldParser {
             CommentFieldDef fieldDef = commentJavaParser.resolveField(field);
 
             ApiParamField paramField = new ApiParamField();
-            paramField.setName(fieldDef.getName());
-            paramField.setComment(fieldDef.getComment());
-            paramField.setTypeName(field.getType().getSimpleName());
-
-            paramField.setRequired(getApiParamFieldRequired(field));
+            if (fieldDef != null) {
+                paramField.setName(fieldDef.getName());
+                paramField.setComment(fieldDef.getComment());
+            } else {
+                paramField.setName(field.getName());
+            }
+            paramField.setType(field.getType());
+            paramField.setRequired(isValidationRequired(field));
 
             List<ApiParamField> fields = resolveParamField(objectField.getType());
             paramField.setFields(fields);
 
             paramFields.add(paramField);
-
         }
         return paramFields;
-    }
-
-    private boolean getApiParamFieldRequired(Field field) {
-        Validation validation = config.getValidation();
-        if (validation != null) {
-            if (field.getAnnotation(validation.getNotNull()) != null ||
-                    field.getAnnotation(validation.getNotEmpty()) != null) {
-                return true;
-            }
-            if (validation.getNotBlank() != null) {
-                // use validation 2.0+
-                if (field.getAnnotation(validation.getNotBlank()) != null) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public void clear() {

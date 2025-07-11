@@ -2,16 +2,25 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dreamcat</groupId>
-  <artifactId>plugin-maven-example</artifactId>
+  <artifactId>apidoc-generator-plugin-maven-example</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
-  <name>plugin-maven-example</name>
-  <url>http://maven.apache.org</url>
+  <url>https://maven.apache.org</url>
 
   <properties>
     <mavenRepo>${env.HOME}/.m2/repository</mavenRepo>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.30</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>5.3.21</version>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -19,24 +28,21 @@
     </dependency>
   </dependencies>
   <build>
+    <sourceDirectory>../../src/test/java</sourceDirectory>
+    <outputDirectory>../../build/classes/java/test</outputDirectory>
     <plugins>
       <plugin>
         <!-- mvn apidoc-generator:apidocGenerate -->
         <groupId>org.dreamcat</groupId>
         <artifactId>apidoc-generator-maven-plugin</artifactId>
-        <version>0.4</version>
+        <version>0.4-SNAPSHOT</version>
         <configuration>
-          <classDirs>../../build/classes/java/test</classDirs>
-          <jarDirs>
-            <jarDir>${mavenRepo}/org/springframework/spring-web/5.3.21</jarDir>
-            <jarDir>${mavenRepo}/org/springframework/spring-core/5.3.21</jarDir>
-          </jarDirs>
-          <srcDirs>../../src/test/java</srcDirs>
           <javaFileDirs>
-            <javaFileDir>com/example/controller</javaFileDir>
-            <javaFileDir>com/example/service</javaFileDir>
+            <javaFileDir>com/example/biz/controller</javaFileDir>
+            <javaFileDir>com/example/biz/service</javaFileDir>
           </javaFileDirs>
-          <enableMergeInputParam>true</enableMergeInputParam>
+          <mergeInputParam>true</mergeInputParam>
+          <verbose>true</verbose>
         </configuration>
       </plugin>
     </plugins>

@@ -2,7 +2,6 @@ package org.dreamcat.cli.generator.apidoc.javadoc;
 
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedFieldDeclaration;
-import com.github.javaparser.resolution.declarations.ResolvedTypeDeclaration;
 import lombok.Data;
 
 /**
@@ -20,9 +19,11 @@ public class CommentFieldDef {
         ResolvedFieldDeclaration resolved = declaration.resolve();
         this.name = resolved.getName();
         this.comment = JavaParserUtil.getJavadocComment(declaration);
-
-        ResolvedTypeDeclaration declaringType = resolved.declaringType();
-        this.type = declaringType.getQualifiedName();
-
+        // ResolvedType resolvedType = resolved.getType();
+        // if (resolvedType.isReferenceType()) {
+        //     this.type = resolvedType.asReferenceType().getQualifiedName();
+        // } else if (resolvedType.isPrimitive()) {
+        //     this.type = resolvedType.asPrimitive().name();
+        // }
     }
 }

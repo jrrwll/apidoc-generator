@@ -3,12 +3,13 @@ package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.Data;
+import org.dreamcat.common.json.YamlUtil;
+import org.dreamcat.common.reflect.ObjectType;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
-import org.dreamcat.common.x.jackson.YamlUtil;
-import org.dreamcat.databind.type.ObjectType;
 
 /**
  * @author Jerry Will

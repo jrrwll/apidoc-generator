@@ -1,0 +1,53 @@
+// build jar
+void jarTask(String name, String classifier, boolean withJar, String desc) {
+    // tasks.create(name: name, type: Jar) {
+    tasks.register(name, Jar) {
+        group 'build'
+        description desc
+        archiveClassifier.set classifier
+        // leave the file/entry that was first copied/created in place
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+        manifest.from jar.manifest
+        from {
+            // findAll { it.name.endsWith('.jar') }: filter something else, such as *.pom
+            configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
+        }
+        if (withJar) {
+            // from sourceSets.main.output
+            with jar
+        }
+    }
+}
+
+plugins.withType(JavaPlugin).configureEach {
+    // zip all classes include deps to a fat jar
+    jarTask('fatJar', 'all', true, 'Build a fat jar with all dependencies')
+    // copy all dep jar to a dir
+    jarTask('depJar', 'dep', false, 'Build a fat jar with all dependencies without classes')
+
+    tasks.register("allJar") {
+        group 'build'
+        description 'Build all jars, include jar, depJar and fatJar'
+        dependsOn jar, depJar, fatJar
+    }
+
+    tasks.register("copyDep", Copy) {
+        group 'build'
+        description 'Copy all dep jars to build/dep'
+        destinationDir file("${layout.buildDirectory.getAsFile().get()}/dep")
+        from {
+            configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.collect { file(it) }
+        }
+    }
+
+    // print all dep flatly
+    tasks.register("descDep") {
+        group 'help'
+        description 'Print all dep flatly'
+        configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }.forEach {
+            println(it.name)
+        }
+    }
+}

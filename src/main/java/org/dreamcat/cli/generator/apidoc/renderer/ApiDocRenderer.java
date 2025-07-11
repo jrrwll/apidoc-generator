@@ -1,11 +1,18 @@
 package org.dreamcat.cli.generator.apidoc.renderer;
 
+import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
+import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.util.ClassLoaderUtil;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.ReflectUtil;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
+import java.rmi.RemoteException;
+import java.util.Map;
 
 /**
  * @author Jerry Will
@@ -27,6 +34,31 @@ public interface ApiDocRenderer {
             return out.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static ApiDocRenderer loadFromPath(String path,
+            Map<String, Object> injectedArgs) throws Exception {
+        return loadFromPath(path, injectedArgs,
+                Thread.currentThread().getContextClassLoader());
+    }
+
+    @SuppressWarnings("unchecked")
+    static ApiDocRenderer loadFromPath(String path,
+            Map<String, Object> injectedArgs, ClassLoader classLoader) throws Exception {
+        ClassLoader cl = ClassLoaderUtil.fromDir(path, classLoader);
+
+        String className = ClassLoaderUtil.getServicesName(ApiDocRenderer.class.getName(), cl);
+        if (className == null) {
+            throw new RemoteException("SPI " + ApiDocRenderer.class.getName() +
+                    " is not found in path: " + path);
+        }
+
+        Class<ApiDocRenderer> rendererClass = (Class<ApiDocRenderer>) cl.loadClass(className);
+        if (ObjectUtil.isNotEmpty(injectedArgs)) {
+            return JsonUtil.fromMap(injectedArgs, rendererClass);
+        } else {
+            return ReflectUtil.newInstance(rendererClass);
         }
     }
 }

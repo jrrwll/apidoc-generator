@@ -10,20 +10,61 @@
 // apply plugin: 'org.dreamcat.apidoc-generator'
 
 plugins {
-    id 'org.dreamcat.apidoc-generator' version '0.4'
+    id 'java'
+    id 'org.dreamcat.apidoc-generator' version '0.4-SNAPSHOT'
 }
 
-def gradleRepo = "${System.getenv('HOME')}/.gradle/caches/modules-2/files-2.1"
+sourceSets {
+    main {
+        java {
+            srcDir '../../src/test/share'
+            srcDir 'gen-java'
+        }
+    }
+}
+
+ext {
+    lombokVersion = '1.18.30'
+    jacksonVersion = '2.17.2'
+}
+
+dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    implementation "org.springframework:spring-core:5.3.31"
+    implementation "org.springframework:spring-web:5.3.31"
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+}
 
 apidocGenerate {
-    classDirs = [
-            '../../build/classes/java/test',
-    ]
-    jarDirs = [
-            "$gradleRepo/org.springframework/spring-web/5.3.21",
-            "$gradleRepo/org.springframework/spring-core/5.3.21"
-    ]
-    srcDirs = ['../../src/test/java']
-    javaFileDirs = ['com/example/controller']
-    enableMergeInputParam = true
+    verbose = true
+    javaFileDirs = ['com/example/biz/controller']
+    mergeInputParam = true
+    swagger {
+        enabled = true
+    }
+    jsonWithComment {
+        enabled = true
+    }
+    rendererPlugin {
+        path = "${System.getenv("HOME")}/repo/apidoc-generator/simple-renderer-plugin/build/dep"
+        // className = "org.dreamcat.cli.generator.apidoc.renderer.SimpleRenderer"
+        injectedArgs = [
+                a: 1,
+                b: 3.14,
+                c: true,
+                d: ["pi", "e"],
+                e: [x: 1, y: [], z: "abc"]
+        ]
+    }
+    fieldDoc {
+        custom {
+            name = "com.example.annotation.FieldDoc"
+        }
+        springcloud {
+            pathMethod = ["yyy"]
+        }
+    }
 }

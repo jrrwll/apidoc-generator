@@ -1,13 +1,15 @@
 package org.dreamcat.cli.generator.apidoc.javadoc;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -23,13 +25,8 @@ public class CommentJavaParser {
     private final Map<Class<?>, CommentClassDef> classCache = new ConcurrentHashMap<>();
     private final Map<Field, CommentFieldDef> fieldCache = new ConcurrentHashMap<>();
 
-    public CommentJavaParser(ApiDocConfig config) {
-        this(config.getSrcDirs(), config.getBasePackages());
-    }
-
-    public String provideFieldComment(Field field) {
-        CommentFieldDef fieldDef = resolveField(field);
-        return fieldDef != null ? fieldDef.getComment() : null;
+    public CommentJavaParser(ApiDocParseConfig config) {
+        this(config.getExistingSrcDirs(), config.getBasePackages());
     }
 
     public CommentFieldDef resolveField(Field field) {

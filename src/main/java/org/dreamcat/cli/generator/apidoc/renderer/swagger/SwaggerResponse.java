@@ -2,8 +2,9 @@ package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.util.Map;
 import lombok.Data;
+
+import java.util.Map;
 
 /**
  * @author Jerry Will

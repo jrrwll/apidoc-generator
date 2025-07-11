@@ -1,36 +1,12 @@
-plugins {
-    id 'java'
-    id 'java-gradle-plugin'
-    // id 'maven-publish'
-    // id 'com.gradle.plugin-publish' version '0.20.0'
-}
-
-version VERSION
-group GROUP_ID
-sourceCompatibility = JavaVersion.VERSION_1_8
-
-ext {
-    // https://mvnrepository.com/artifact/org.projectlombok/lombok
-    lombokVersion = "1.18.22"
-    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-    junitVersion = "5.8.2"
-}
+apply plugin: 'java-gradle-plugin'
 
 dependencies {
     implementation gradleApi()
 
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-
-    implementation 'org.dreamcat:common-core:0.3'
-    implementation 'org.dreamcat:common-x:0.2'
-    implementation 'org.dreamcat:apidoc-generator:0.4'
+    implementation 'org.dreamcat:apidoc-generator:0.4-SNAPSHOT'
 }
 
 // https://plugins.gradle.org/docs/publish-plugin
-
 gradlePlugin {
     automatedPublishing = false
     plugins {
@@ -55,8 +31,5 @@ gradlePlugin {
 //     }
 // }
 
-apply from: "../publish.gradle"
 
-test {
-    useJUnitPlatform()
-}
+

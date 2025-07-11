@@ -1,5 +1,26 @@
 package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerParameter.In;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.reflect.ObjectType;
+import org.dreamcat.common.util.ByteUtil;
+import org.dreamcat.common.util.FunctionUtil;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.RandomUtil;
+import org.dreamcat.common.util.ReflectUtil;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
@@ -11,35 +32,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import lombok.Setter;
-import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerParameter.In;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
-import org.dreamcat.common.util.ByteUtil;
-import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.util.RandomUtil;
-import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.type.ObjectType;
 
 /**
  * @author Jerry Will
  * @version 2022-01-04
  */
 @Setter
+@NoArgsConstructor
 public class SwaggerRenderer implements ApiDocRenderer {
 
     private String defaultTitle = "";
     private String defaultVersion = "";
-    private String fieldNameAnnotation;
-    private List<String> fieldNameAnnotationName;
-    private Function<Field, String> fieldNameGetter;
+    // private String fieldNameAnnotation;
+    // private List<String> fieldNameAnnotationName;
+    private Function<Field, String> fieldNameGetter = Field::getName;
     private ClassLoader classLoader;
+
+    public SwaggerRenderer(ApiDocParseConfig config) {
+        this.fieldNameGetter = field -> getFieldName(field, config);
+    }
 
     @Override
     public void render(ApiDoc apiDoc, Writer out) throws IOException {
@@ -49,9 +60,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
     }
 
     private Swagger renderSwagger(ApiDoc apiDoc) {
-        afterPropertySet();
         Swagger swagger = new Swagger();
-
         renderInfo(apiDoc, swagger);
 
         List<Tag> tags = new ArrayList<>();
@@ -105,6 +114,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
 
         Map<String, Map<SwaggerMethod, SwaggerPath>> swaggerPaths = new HashMap<>();
         for (String path : paths) {
+            path = path.replaceFirst("\\{(.*?)}", "\\$$1");
             Map<SwaggerMethod, SwaggerPath> swaggerPathMap = swaggerPaths.computeIfAbsent(
                     path, it -> new HashMap<>());
             for (String action : actions) {
@@ -127,10 +137,18 @@ public class SwaggerRenderer implements ApiDocRenderer {
         swaggerPath.setProduces(function.getProduces());
 
         List<ApiInputParam> inputParams = function.getInputParams();
-        List<SwaggerParameter> parameters = new ArrayList<>(inputParams.size());
-        for (ApiInputParam inputParam : inputParams) {
-            SwaggerParameter parameter = formatParameter(inputParam, swagger);
-            parameters.add(parameter);
+        List<SwaggerParameter> parameters = new ArrayList<>();
+        if (function.isInputParamsMerged()) {
+            List<ApiParamField> fields = inputParams.get(0).getFields();
+            for (ApiParamField field : fields) {
+                SwaggerParameter parameter = formatParameter(field);
+                parameters.add(parameter);
+            }
+        } else {
+            for (ApiInputParam inputParam : inputParams) {
+                SwaggerParameter parameter = formatParameter(inputParam, swagger);
+                parameters.add(parameter);
+            }
         }
         swaggerPath.setParameters(parameters);
 
@@ -154,7 +172,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
 
         SwaggerParameter parameter = new SwaggerParameter();
         parameter.setDescription(inputParam.getComment());
-        parameter.setRequired(ObjectUtil.mapOrElse(inputParam.getRequired(), it -> it, true));
+        parameter.setRequired(FunctionUtil.mapOrElse(inputParam.getRequired(), it -> it, true));
 
         SwaggerType swaggerType = SwaggerType.parse(type.getType());
         String pathVar = inputParam.getPathVar();
@@ -174,6 +192,20 @@ public class SwaggerRenderer implements ApiDocRenderer {
             parameter.setSchema(schema);
         }
 
+        return parameter;
+    }
+
+    private SwaggerParameter formatParameter(ApiParamField field) {
+        SwaggerParameter parameter = new SwaggerParameter();
+        parameter.setName(field.getName());
+        parameter.setDescription(field.getComment());
+        parameter.setRequired(field.getRequired());
+        parameter.setType(SwaggerType.parse(field.getType()));
+        if (ObjectUtil.isEmpty(field.getFields())) {
+            parameter.setIn(In.query);
+        } else {
+            parameter.setIn(In.body);
+        }
         return parameter;
     }
 
@@ -220,37 +252,28 @@ public class SwaggerRenderer implements ApiDocRenderer {
                 .replace(", ", "");
     }
 
-    private void afterPropertySet() {
-        if (fieldNameGetter == null &&
-                ObjectUtil.isNotBlank(fieldNameAnnotation) &&
-                ObjectUtil.isNotEmpty(fieldNameAnnotationName)) {
-            fieldNameGetter = this::fieldNameAnnotationName;
-        }
-    }
+    private String getFieldName(Field field, ApiDocParseConfig config) {
+        if (ObjectUtil.isEmpty(config.getFieldDoc())) return field.getName();
 
-    private String fieldNameAnnotationName(Field field) {
-        Class<? extends Annotation> annType;
-        if (classLoader == null) {
-            annType = ReflectUtil.forName(
-                    fieldNameAnnotation);
-        } else {
-            annType = ReflectUtil.forName(
-                    fieldNameAnnotation, true, classLoader);
-        }
-        Object ann = field.getDeclaredAnnotation(annType);
-        if (ann != null) {
-            for (String methodName : fieldNameAnnotationName) {
-                String name = (String) ReflectUtil.invoke(ann, methodName);
-                if (ObjectUtil.isNotEmpty(name)) {
-                    return name;
-                }
+        for (FieldDoc fieldDoc : config.getFieldDoc()) {
+            if (ObjectUtil.isEmpty(fieldDoc.getName()) ||
+                    ObjectUtil.isEmpty(fieldDoc.getNameMethod())) continue;
+            Class<? extends Annotation> annType;
+            if (classLoader == null) {
+                annType = ReflectUtil.forName(fieldDoc.getName());
+            } else {
+                annType = ReflectUtil.forName(fieldDoc.getName(), classLoader);
+            }
+            Object annoObj = field.getDeclaredAnnotation(annType);
+            if (annoObj == null) continue;
+
+            for (String method : fieldDoc.getNameMethod()) {
+                Object nameObj = ReflectUtil.invoke(annoObj, method);
+                if (nameObj == null) continue;
+                if (nameObj instanceof String && nameObj.toString().isEmpty()) continue;
+                return nameObj.toString();
             }
         }
         return field.getName(); // default use field name
-    }
-
-    public void useJacksonFieldNameGetter() {
-        this.fieldNameAnnotation = "com.fasterxml.jackson.annotation.JsonProperty";
-        this.fieldNameAnnotationName = Collections.singletonList("value");
     }
 }

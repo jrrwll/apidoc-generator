@@ -3,6 +3,11 @@ package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+import org.dreamcat.common.reflect.ObjectField;
+import org.dreamcat.common.reflect.ObjectType;
+import org.dreamcat.common.util.ReflectUtil;
+
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,10 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.Data;
-import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.type.ObjectField;
-import org.dreamcat.databind.type.ObjectType;
 
 /**
  * @author Jerry Will
@@ -71,7 +72,7 @@ public class SwaggerDefinition {
             }
             definition.setItems(items);
         } else if (swaggerType.equals(SwaggerType.object) &&
-                ReflectUtil.isNotSubOrEq(clazz, Map.class)) {
+                !ReflectUtil.isAssignable(Map.class, clazz)) {
             Map<Field, ObjectField> fields = type.resolveFields();
             if (fields != null) {
                 Map<String, SwaggerDefinition> properties = new HashMap<>(fields.size());

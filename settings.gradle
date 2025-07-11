@@ -1,7 +1,6 @@
 rootProject.name = 'apidoc-generator'
 
-// def props = new Properties()
-// file("../gradle.properties").withInputStream { props.load(it) }
-//
-// version props.getProperty('VERSION')
-// group props.getProperty('GROUP_ID')
+include 'apidoc-generator-gradle-plugin'
+project(":apidoc-generator-gradle-plugin").projectDir = file("$rootDir/plugin-gradle")
+
+include 'simple-renderer-plugin'

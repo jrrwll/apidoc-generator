@@ -1,14 +1,15 @@
 package org.dreamcat.cli.generator.apidoc.javadoc;
 
 import com.github.javaparser.ast.body.MethodDeclaration;
+import lombok.Data;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.StringUtil;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Data;
-import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.util.StringUtil;
 
 /**
  * @author Jerry Will

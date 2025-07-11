@@ -17,11 +17,12 @@ public enum SwaggerType {
     _boolean;
 
     public static SwaggerType parse(Class<?> clazz) {
+        if (clazz == null) return object;
         if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
             return _boolean;
-        } else if (ReflectUtil.isSubOrEq(clazz, Number.class)) {
+        } else if (ReflectUtil.isAssignable(Number.class, clazz)) {
             return integer;
-        } else if (ReflectUtil.isSubOrEq(clazz, CharSequence.class) || clazz.isEnum()) {
+        } else if (ReflectUtil.isAssignable(CharSequence.class, clazz) || clazz.isEnum()) {
             return string;
         } else if (ReflectUtil.isCollectionOrArray(clazz)) {
             return array;

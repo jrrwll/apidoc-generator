@@ -1,0 +1,5 @@
+dependencies {
+    compileOnly "org.dreamcat:apidoc-generator:$version"
+
+    implementation libs.bundles.hc
+}

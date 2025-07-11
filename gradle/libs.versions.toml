@@ -1,0 +1,41 @@
+# https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
+[versions]
+dreamcat = "0.5-SNAPSHOT"
+# https://mvnrepository.com/artifact/org.projectlombok/lombok
+lombok = '1.18.30'
+# https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+slf4j = '1.7.36'
+# https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+jupiter = '5.9.2'
+# https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+jackson = "2.17.2"
+# https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
+# https://mvnrepository.com/artifact/org.apache.httpcomponents.core5/httpcore5
+hc = '5.2.3'
+# don't use 3.25.8 since it has some bugs
+# https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
+javaparser = '3.24.0'
+# https://mvnrepository.com/artifact/org.freemarker/freemarker
+freemarker = '2.3.31'
+
+[libraries]
+dreamcat-common = { module = "org.dreamcat:common", version.ref = "dreamcat" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "jupiter" }
+jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "jupiter" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+httpcore5 = { module = "org.apache.httpcomponents.core5:httpcore5", version.ref = "hc" }
+httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version.ref = "hc" }
+
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser"}
+javaparser-symbol-solver-core = { module = "com.github.javaparser:javaparser-symbol-solver-core", version.ref = "javaparser"}
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker"}
+
+[bundles]
+jackson = ["jackson-databind", "jackson-annotations", "jackson-yaml"]
+hc = ["httpcore5", "httpclient"]
+javaparser = ["javaparser-core", "javaparser-symbol-solver-core"]

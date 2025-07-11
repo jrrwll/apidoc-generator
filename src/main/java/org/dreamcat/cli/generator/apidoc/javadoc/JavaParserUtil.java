@@ -8,12 +8,13 @@ import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import org.dreamcat.common.util.ObjectUtil;
+import org.dreamcat.common.util.StringUtil;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.dreamcat.common.util.ObjectUtil;
-import org.dreamcat.common.util.StringUtil;
 
 /**
  * @author Jerry Will

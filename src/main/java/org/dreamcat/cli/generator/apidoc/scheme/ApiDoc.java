@@ -1,8 +1,9 @@
 package org.dreamcat.cli.generator.apidoc.scheme;
 
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
 
 /**
  * @author Jerry Will

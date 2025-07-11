@@ -1,0 +1,29 @@
+{
+  "verbose": true,
+  "basePackages": [
+    ""
+  ],
+  "srcDirs": [
+    "plugin-gradle/example/src/main/java",
+    "src/test/share",
+    "plugin-gradle/example/gen-java"
+  ],
+  "javaFileDirs": [
+    "com/example/biz/controller"
+  ],
+  "ignoreInputParamTypes": [
+    "[B",
+    "org.springframework.web.multipart.MultipartFile"
+  ],
+  "mergeInputParam": {
+    "countThreshold": 0,
+    "flatType": true,
+    "flatTypeTester": {}
+  },
+  "autoDetect": true,
+  "fieldDoc": [
+    {
+      "name": "com.example.annotation.FieldDoc"
+    }
+  ]
+}

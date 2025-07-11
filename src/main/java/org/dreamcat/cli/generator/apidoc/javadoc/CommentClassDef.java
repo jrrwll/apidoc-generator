@@ -8,13 +8,14 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import lombok.Data;
+import org.dreamcat.common.util.ObjectUtil;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Data;
-import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
@@ -31,8 +32,8 @@ public class CommentClassDef {
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
     public CommentClassDef(TypeDeclaration<?> declaration) {
-        ResolvedReferenceTypeDeclaration resolve = declaration.resolve();
-        this.type = resolve.getQualifiedName();
+        ResolvedReferenceTypeDeclaration resolved = declaration.resolve();
+        this.type = resolved.getQualifiedName();
         this.comment = JavaParserUtil.getJavadocComment(declaration);
 
         this.fields = declaration.getFields().stream()

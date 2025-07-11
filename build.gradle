@@ -1,70 +1,67 @@
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
-}
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    }
+    apply plugin: 'java'
+    java.sourceCompatibility = JavaVersion.VERSION_1_8
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
+    compileJava.options.compilerArgs.add '-parameters'
+    compileTestJava.options.compilerArgs.add '-parameters'
 
-apply plugin: 'java-library'
-java.sourceCompatibility = JavaVersion.VERSION_1_8
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
-compileJava.options.compilerArgs.add '-parameters'
-compileTestJava.options.compilerArgs.add '-parameters'
+    version = VERSION
+    group = GROUP_ID
 
-version = VERSION
-group = GROUP_ID
+    dependencies {
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
+        testCompileOnly libs.lombok
+        testAnnotationProcessor libs.lombok
 
-ext {
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    slf4jVersion = "1.7.36"
-    // https://mvnrepository.com/artifact/org.projectlombok/lombok
-    lombokVersion = "1.18.24"
-    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-    junitVersion = "5.8.2"
-    // https://mvnrepository.com/artifact/com.github.javaparser/javaparser-core
-    javaparserVersion = '3.24.0'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    jacksonVersion = '2.13.3'
-}
+        testImplementation libs.jupiter.api
+        testRuntimeOnly libs.jupiter.engine
+        implementation libs.dreamcat.common
+    }
 
-dependencies {
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
-    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    testRuntimeOnly "org.slf4j:slf4j-simple:$slf4jVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+    if (file("${projectDir}/gradle.properties").exists()) {
+        apply from: new File(rootDir, 'gradle/publish.gradle')
+    }
+    apply from: new File(rootDir, 'gradle/tasks-jar.gradle')
 
-    // or gradle.properties: org.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk/Contents/Home
-    // implementation files(Jvm.current().toolsJar)
+    test {
+        useJUnitPlatform()
+    }
 
-    implementation "com.github.javaparser:javaparser-core:$javaparserVersion"
-    implementation "com.github.javaparser:javaparser-symbol-solver-core:$javaparserVersion"
-    implementation 'org.dreamcat:databind-core:0.2'
-    implementation 'org.dreamcat:databind-json:0.2'
-    implementation 'org.dreamcat:common-core:0.3'
-    implementation 'org.dreamcat:common-x:0.2'
-    implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-    // // https://mvnrepository.com/artifact/org.freemarker/freemarker
-    implementation 'org.freemarker:freemarker:2.3.31'
-
-    // https://mvnrepository.com/artifact/org.springframework/spring-web
-    testImplementation 'org.springframework:spring-web:5+'
-    testImplementation 'javax.validation:validation-api:2.0.1.Final'
-}
-
-apply from: "./publish.gradle"
-apply from: "./tasks.gradle"
-
-task printVersion {
-    doLast {
-        print version
+    tasks.register('printVersion') {
+        doLast {
+            print version
+        }
     }
 }
 
-test {
-    useJUnitPlatform()
+dependencies {
+    // or gradle.properties: org.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk/Contents/Home
+    // implementation files(Jvm.current().toolsJar)
+
+    implementation libs.slf4j.api
+    testRuntimeOnly libs.slf4j.simple
+
+    implementation libs.bundles.jackson
+    implementation libs.bundles.javaparser
+    implementation libs.freemarker
+
+    // https://mvnrepository.com/artifact/org.springframework/spring-web
+    testImplementation 'org.springframework:spring-web:5.3.31'
+    testImplementation 'javax.validation:validation-api:2.0.1.Final'
+}
+
+sourceSets {
+    test {
+        java {
+            srcDir 'src/test/java'
+            srcDir 'src/test/share'
+        }
+    }
 }

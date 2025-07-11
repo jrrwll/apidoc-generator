@@ -1,90 +1,106 @@
 package org.dreamcat.cli.generator.apidoc.parser;
 
-import java.io.File;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Http;
-import org.dreamcat.cli.generator.apidoc.ApiDocConfig.Validation;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
-import org.dreamcat.cli.generator.apidoc.javadoc.CommentParameterDef;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
-import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.Pair;
 import org.dreamcat.common.io.PathUtil;
+import org.dreamcat.common.reflect.ObjectMethod;
+import org.dreamcat.common.reflect.ObjectParameter;
+import org.dreamcat.common.reflect.ObjectRandomGenerator;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
-import org.dreamcat.databind.instance.RandomInstance;
-import org.dreamcat.databind.json.legacy.JSONWithComment;
-import org.dreamcat.databind.type.ObjectMethod;
-import org.dreamcat.databind.type.ObjectParameter;
-import org.dreamcat.databind.type.ObjectType;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
  * @version 2021-12-09
  */
 @Slf4j
-public class ApiDocParser {
+public class ApiDocParser extends BaseParser {
 
-    final ApiDocConfig config;
-    final ClassLoader classLoader;
     final CommentJavaParser commentJavaParser;
-    final RandomInstance randomInstance;
-    @Setter
-    ApiParamFieldParser apiParamFieldParser;
+    final ApiParamParser apiParamParser;
 
-    public ApiDocParser(ApiDocConfig config) {
-        this(config, null, new RandomInstance());
+    public ApiDocParser(ApiDocParseConfig config) {
+        this(config, (ClassLoader) null);
     }
 
-    public ApiDocParser(ApiDocConfig config, ClassLoader classLoader, RandomInstance randomInstance) {
-        Objects.requireNonNull(config);
-        config.afterPropertySet(classLoader);
-        ObjectUtil.requireNotNull(randomInstance, "randomInstance");
+    public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader) {
+        this(config, classLoader, new ObjectRandomGenerator());
+    }
 
-        this.config = config;
-        this.classLoader = classLoader;
+    public ApiDocParser(ApiDocParseConfig config, ObjectRandomGenerator randomGenerator) {
+        this(config, null, randomGenerator);
+    }
+
+    public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader,
+            ObjectRandomGenerator randomGenerator) {
+        super(config, classLoader);
+        this.config.afterPropertySet(classLoader);
         this.commentJavaParser = new CommentJavaParser(config);
-        this.randomInstance = randomInstance;
-
-        this.apiParamFieldParser = new ApiParamFieldParser(config, commentJavaParser);
+        this.apiParamParser = new ApiParamParser(this, randomGenerator);
     }
 
     @SneakyThrows
     public ApiDoc parse() {
         List<String> javaFileDirs = config.getJavaFileDirs();
-        List<String> srcDirs = config.getSrcDirs();
+        List<String> srcDirs = config.getExistingSrcDirs();
 
-        String userDir = System.getProperty("user.dir");
-        boolean relative = config.isUseRelativeJavaFilePath();
-        if (relative) {
-            javaFileDirs = PathUtil.crossJoin(srcDirs, javaFileDirs);
+        List<String> fileDirs = new ArrayList<>();
+        for (String javaFileDir : javaFileDirs) {
+            if (javaFileDir.startsWith("/")) {
+                fileDirs.add(javaFileDir);
+            } else {
+                fileDirs.addAll(PathUtil.crossJoin(srcDirs, Collections.singletonList(javaFileDir)));
+            }
         }
 
+        fileDirs = fileDirs.stream().filter(javaFileDir -> {
+            File dir = new File(javaFileDir);
+            if (!dir.exists()) {
+                log.warn("java dir not found: {}", dir.getAbsolutePath());
+                return false;
+            }
+            return true;
+        }).collect(Collectors.toList());
+
         ApiDoc apiDoc = new ApiDoc();
+        if (fileDirs.isEmpty()) {
+            log.warn("no any existing java dir found in your `javaFileDirs`");
+            return apiDoc;
+        } else if (config.isVerbose()){
+            log.info("real javaFileDirs: " + fileDirs);
+        }
+
         Map<String, ApiGroup> groupMap = new LinkedHashMap<>();
-        for (String javaFileDir : javaFileDirs) {
-            File dir = relative ? new File(userDir, javaFileDir) : new File(javaFileDir);
+        for (String javaFileDir : fileDirs) {
+            File dir = new File(javaFileDir);
             File[] files;
-            if (!dir.exists() || ObjectUtil.isEmpty(files = dir.listFiles())) {
+            if (dir.isFile()) {
+                files = new File[]{dir};
+            } else if (ObjectUtil.isEmpty(files = dir.listFiles())) {
                 log.warn("no java files in {}", dir.getAbsolutePath());
                 continue;
             }
@@ -110,7 +126,7 @@ public class ApiDocParser {
 
     private void parseClass(CommentClassDef classDef, Map<String, ApiGroup> groupMap) {
         String type = classDef.getType();
-        Class<?> serviceType = ReflectUtil.forName(type, true, classLoader);
+        Class<?> serviceType = ReflectUtil.forName(type, classLoader);
 
         ApiGroup apiGroup = groupMap.computeIfAbsent(type, it -> new ApiGroup());
         apiGroup.setName(type);
@@ -138,50 +154,43 @@ public class ApiDocParser {
         apiFunction.setServiceName(serviceType.getName());
         apiFunction.setComment(methodDef.getComment());
 
-        if (config.getHttp() != null) {
-            apiFunction.setPath(parseMethodPath(methodDef, method, serviceType));
-            apiFunction.setAction(parseMethodAction(methodDef, method, serviceType));
+        if (ObjectUtil.isNotEmpty(config.getHttp())) {
+            apiFunction.setPath(parseMethodPath(method, serviceType));
+            apiFunction.setAction(parseMethodAction(method, serviceType));
         }
 
         // output
-        ObjectMethod objectMethod = ObjectMethod.fromMethod(method);
-        List<ObjectParameter> objectParameters = objectMethod.getParameters();
-        ObjectType returnType = objectMethod.getReturnType();
-        ApiOutputParam outputParam = new ApiOutputParam();
-        outputParam.setType(returnType);
-        outputParam.setComment(methodDef.getReturnComment());
-        if (config.isUseJsonWithComment()) {
-            ObjectType type = outputParam.getType();
-            outputParam.setJsonWithComment(toJSONWithComment(type));
-        }
-        if (config.isUseIndentedTable()) {
-            ObjectType type = outputParam.getType();
-            outputParam.setFields(apiParamFieldParser.resolveParamField(type));
-        }
+        ApiOutputParam outputParam = apiParamParser.parseOutputParam(methodDef, method);
         apiFunction.setOutputParam(outputParam);
 
         // input
+        ObjectMethod objectMethod = ObjectMethod.fromMethod(method);
+        List<ObjectParameter> objectParameters = objectMethod.getParameters();
         boolean inputParamsMerged = config.needMergeInputParam(serviceType, method);
         apiFunction.setInputParamsMerged(inputParamsMerged);
         if (inputParamsMerged) {
-            ApiInputParam merged = parseMergedInputParams(methodDef, objectParameters);
+            ApiInputParam merged = apiParamParser.parseMergedInputParams(methodDef, objectParameters);
             apiFunction.setInputParams(new ArrayList<>(Collections.singletonList(merged)));
         } else {
-            apiFunction.setInputParams(parseInputParams(methodDef, objectParameters));
+            apiFunction.setInputParams(apiParamParser.parseInputParams(methodDef, objectParameters));
         }
         apiFunction.setInputParamCount(apiFunction.getInputParams().size());
+
+        // handle extra anno
+        if (ObjectUtil.isNotEmpty(config.getFunctionDoc())) {
+            parseFunctionDoc(method, apiFunction);
+        }
         return apiFunction;
     }
 
-    private List<String> parseMethodPath(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
-        Http http = config.getHttp();
-        if (http == null || http.getPath() == null) return null;
+    private List<String> parseMethodPath(Method method, Class<?> serviceType) {
+        List<Http> http = config.getHttp();
+        Object pathAnn = findAndInvokeAnno(method, http, Http::getPath, Http::getPathMethod);
+        Object basePathAnn = findAndInvokeAnno(serviceType, http, Http::getPath, Http::getPathMethod);
 
-        Annotation pathAnn = ReflectUtil.retrieveAnnotation(method, http.getPath());
-        Annotation basePathAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getPath());
         List<String> path = null, basePath = null;
-        if (pathAnn != null) path = http.getPathGetter().apply(pathAnn);
-        if (basePathAnn != null) basePath = http.getPathGetter().apply(basePathAnn);
+        if (pathAnn != null) path = annoValueToStrs(pathAnn);
+        if (basePathAnn != null) basePath = annoValueToStrs(basePathAnn);
 
         if (basePath != null && path != null) {
             return PathUtil.crossJoin(basePath, path);
@@ -194,119 +203,55 @@ public class ApiDocParser {
         }
     }
 
-    private List<String> parseMethodAction(CommentMethodDef methodDef, Method method, Class<?> serviceType) {
-        Http http = config.getHttp();
-        if (http == null || http.getAction() == null) return null;
-
-        Annotation actionAnn = ReflectUtil.retrieveAnnotation(method, http.getAction());
-        if (actionAnn != null) {
-            List<String> action = http.getActionGetter().apply(actionAnn);
-            if (action != null) return action;
+    private List<String> parseMethodAction(Method method, Class<?> serviceType) {
+        List<Http> http = config.getHttp();
+        Object action = findAndInvokeAnno(method, http,
+                Http::getAction, Http::getActionMethod);
+        if (action != null) {
+            return annoValueToStrs(action);
         }
 
-        Annotation baseActionAnn = ReflectUtil.retrieveAnnotation(serviceType, http.getAction());
-        if (baseActionAnn == null) return null;
-        return http.getActionGetter().apply(baseActionAnn);
+        Object baseAction = findAndInvokeAnno(serviceType, http,
+                Http::getAction, Http::getActionMethod);
+        if (baseAction == null) return null;
+        return annoValueToStrs(baseAction);
     }
 
-    private List<ApiInputParam> parseInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
-        List<CommentParameterDef> parameters = methodDef.getParameters();
-        int n = parameters.size();
-        List<ApiInputParam> inputParams = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            CommentParameterDef parameter = parameters.get(i);
-            ObjectParameter objectParameter = objectParameters.get(i);
+    private void parseFunctionDoc(Method method, ApiFunction apiFunction) {
+        for (FunctionDoc funDoc : config.getFunctionDoc()) {
+            Object annoObj = findAnno(method, funDoc.getName());
+            if (annoObj == null) continue;
+            // function comment
+            Object comment = invokeAnno(annoObj, funDoc.getCommentMethod());
+            if (comment != null) {
+                apiFunction.setComment(comment.toString());
+            }
 
-            if (config.ignoreInputParamType(objectParameter.getType().getType().getName())) continue;
-            ApiInputParam apiParam = parseInputParam(parameter, objectParameter);
-            inputParams.add(apiParam);
-        }
-        return inputParams;
-    }
-
-    private ApiInputParam parseInputParam(CommentParameterDef parameter, ObjectParameter objectParameter) {
-        ApiInputParam apiParam = new ApiInputParam();
-        ObjectType type = objectParameter.getType();
-        apiParam.setType(type);
-        apiParam.setTypeName(type.getType().getSimpleName());
-        apiParam.setName(parameter.getName());
-        apiParam.setComment(parameter.getComment());
-        if (config.isUseJsonWithComment()) {
-            apiParam.setJsonWithComment(toJSONWithComment(type));
-        }
-        if (config.isUseIndentedTable()) {
-            apiParam.setFields(apiParamFieldParser.resolveParamField(type));
-        }
-
-        apiParam.setRequired(parseParameterRequired(objectParameter.getParameter()));
-
-        if (config.getHttp() != null) {
-            apiParam.setPathVar(parseParameterPathVar(objectParameter.getParameter()));
-        }
-        return apiParam;
-    }
-
-    private ApiInputParam parseMergedInputParams(CommentMethodDef methodDef, List<ObjectParameter> objectParameters) {
-        ApiInputParam apiParam = new ApiInputParam();
-        apiParam.setName("<param>");
-        apiParam.setTypeName("<anonymous>"); // merged type
-
-        List<ApiParamField> paramFields = new ArrayList<>();
-        Map<String, CommentParameterDef> parameterDefMap = methodDef.getParameters()
-                .stream().collect(Collectors.toMap(CommentParameterDef::getName, a -> a));
-        for (ObjectParameter objectParameter : objectParameters) {
-            Parameter parameter = objectParameter.getParameter();
-            if (config.ignoreInputParamType(parameter.getType().getName())) continue;
-            String parameterName = parameter.getName();
-            ApiParamField paramField = new ApiParamField();
-            paramField.setName(parameterName);
-            paramField.setTypeName(parameter.getType().getSimpleName());
-
-            CommentParameterDef parameterDef = parameterDefMap.get(parameterName);
-            if (parameterDef != null) paramField.setComment(parameterDef.getComment());
-
-            paramField.setFields(apiParamFieldParser.resolveParamField(
-                    objectParameter.getType()));
-
-            paramField.setRequired(Objects.equals(true, parseParameterRequired(parameter)));
-
-            paramFields.add(paramField);
-        }
-        apiParam.setFields(paramFields);
-        return apiParam;
-    }
-
-    private Boolean parseParameterRequired(Parameter parameter) {
-        Http http = config.getHttp();
-        if (http != null && http.getRequired() != null) {
-            Annotation ann = ReflectUtil.retrieveAnnotation(parameter, http.getRequired());
-            if (ann != null) {
-                return http.getRequiredGetter().apply(ann);
+            Object paramsObj = invokeAnno(annoObj, funDoc.getNestedParamMethod());
+            if (paramsObj == null) continue;
+            Object[] params = paramsObj instanceof Object[] ?
+                    (Object[]) paramsObj : new Object[]{paramsObj};
+            Map<String, Pair<Object, Object>> paramMap = new HashMap<>();
+            for (Object param : params) {
+                Object paramName = invokeAnno(param, funDoc.getNestedParamNameMethod());
+                if (paramName == null) continue;
+                Object paramComment = invokeAnno(param, funDoc.getNestedParamCommentMethod());
+                Object paramRequired = invokeAnno(param, funDoc.getNestedParamRequiredMethod());
+                if (paramComment != null || paramRequired != null) {
+                    paramMap.put(paramName.toString(), Pair.of(paramComment, paramRequired));
+                }
+            }
+            if (paramMap.isEmpty()) continue;
+            for (ApiInputParam inputParam : apiFunction.getInputParams()) {
+                Pair<Object, Object> pair = paramMap.get(inputParam.getName());
+                if (pair == null) continue;
+                if (pair.hasFirst()) {
+                    inputParam.setComment(pair.first().toString());
+                }
+                if (pair.hasSecond()) {
+                    inputParam.setRequired(Objects.equals(pair.second(), true));
+                }
             }
         }
-        Validation validation = config.getValidation();
-        if (config.getValidation() != null) {
-            if (ReflectUtil.retrieveAnnotation(parameter, validation.getNotNull()) != null ||
-                    ReflectUtil.retrieveAnnotation(parameter, validation.getNotEmpty()) != null ||
-                    ReflectUtil.retrieveAnnotation(parameter, validation.getNotBlank()) != null) {
-                return true;
-            }
-        }
-        return null;
-    }
-
-    private String parseParameterPathVar(Parameter parameter) {
-        Http http = config.getHttp();
-        if (http == null || http.getPathVar() == null) return null;
-        Annotation ann = ReflectUtil.retrieveAnnotation(parameter, http.getPathVar());
-        if (ann != null) {
-            return http.getPathVarGetter().apply(ann);
-        }
-        return null;
-    }
-
-    private String toJSONWithComment(ObjectType type) {
-        Object bean = randomInstance.randomValue(type);
-        return JSONWithComment.stringify(bean, commentJavaParser::provideFieldComment);
     }
 }

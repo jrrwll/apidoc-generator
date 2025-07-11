@@ -1,21 +1,15 @@
 > see [more](https://jrrwll.github.io/docs/tool/apidoc-generator/) on my [Blog](https://jrrwll.github.io/)
 
-### ops log
+## maven plugin
+
+### build
 
 ```shell
-# create a maven-plugin project
-mvn archetype:generate \
-    -DgroupId=org.dreamcat \
-    -DartifactId=apidoc-generator-maven-plugin \
-    -DarchetypeArtifactId=maven-archetype-mojo \
-    -DinteractiveMode=false
-
-# use the plugin
-mvn archetype:generate \
-    -DgroupId=org.dreamcat \
-    -DartifactId=plugin-maven-example \
-    -DinteractiveMode=false
+export GPG_PASSPHRASE=xxx
+mvn install -Dmaven.test.skip=true
 ```
+
+### usage
 
 ```shell
 mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
@@ -24,7 +18,6 @@ mvn org.dreamcat:apidoc-generator-maven-plugin:apidocGenerate
 or add shorthand to `~/.m2/settings.xml`
 
 ```xml
-
 <pluginGroups>
   <pluginGroup>org.dreamcat</pluginGroup>
 </pluginGroups>
@@ -32,4 +25,10 @@ or add shorthand to `~/.m2/settings.xml`
 
 ```shell
 mvn apidoc-generator:apidocGenerate
+```
+
+## doxygen
+
+```shell
+brew install doxygen
 ```

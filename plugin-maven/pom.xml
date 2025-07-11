@@ -4,8 +4,7 @@
   <groupId>org.dreamcat</groupId>
   <artifactId>apidoc-generator-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>0.4</version>
-  <name>apidoc-generator-maven-plugin</name>
+  <version>0.4-SNAPSHOT</version>
   <description>maven plugin for API doc generator</description>
   <url>https://github.com/jrrwll/apidoc-generator</url>
 
@@ -29,52 +28,54 @@
 
   <properties>
     <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-plugin-api -->
-    <versions.maven-plugin-api>3.8.5</versions.maven-plugin-api>
-    <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-plugin-annotations -->
+    <!-- https://mvnrepository.com/artifact/org.apache.maven/maven-core -->
+    <maven-plugin.version>3.8.8</maven-plugin.version>
+    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugin-tools/maven-plugin-annotations -->
+    <maven-plugin-tools.version>3.8.2</maven-plugin-tools.version>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-plugin-plugin -->
-    <versions.maven-plugin>3.6.4</versions.maven-plugin>
+    <maven-plugin-plugin.version>3.8.2</maven-plugin-plugin.version>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
-    <versions.maven-javadoc>3.3.2</versions.maven-javadoc>
+    <maven-javadoc.version>3.3.2</maven-javadoc.version>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
-    <versions.maven-source>3.2.1</versions.maven-source>
+    <maven-source.version>3.2.1</maven-source.version>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
-    <versions.maven-compiler>3.10.1</versions.maven-compiler>
+    <maven-compiler.version>3.10.1</maven-compiler.version>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
-    <versions.maven-gpg>3.0.1</versions.maven-gpg>
+    <maven-gpg.version>3.0.1</maven-gpg.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>${versions.maven-plugin-api}</version>
+      <version>${maven-plugin.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>${versions.maven-plugin}</version>
+      <version>${maven-plugin-tools.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.dreamcat</groupId>
-      <artifactId>common-core</artifactId>
-      <version>0.3</version>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>${maven-plugin.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dreamcat</groupId>
-      <artifactId>common-x</artifactId>
-      <version>0.2</version>
+      <artifactId>common</artifactId>
+      <version>0.5-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.dreamcat</groupId>
       <artifactId>apidoc-generator</artifactId>
-      <version>0.4</version>
+      <version>0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.22</version>
+      <version>1.18.30</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -91,13 +92,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>${versions.maven-plugin}</version>
+        <version>${maven-plugin-plugin.version}</version>
       </plugin>
       <!-- compiler-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${versions.maven-compiler}</version>
+        <version>${maven-compiler.version}</version>
         <configuration>
           <source>8</source>
           <target>8</target>
@@ -107,7 +108,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${versions.maven-source}</version>
+        <version>${maven-source.version}</version>
         <executions>
           <execution>
             <id>attach-source</id>
@@ -122,7 +123,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${versions.maven-javadoc}</version>
+        <version>${maven-javadoc.version}</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -136,7 +137,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-        <version>${versions.maven-gpg}</version>
+        <version>${maven-gpg.version}</version>
         <executions>
           <execution>
             <id>sign-artifacts</id>
@@ -147,6 +148,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -164,3 +168,16 @@
     </repository>
   </distributionManagement>
 </project>
+<!--
+# create a maven-plugin project
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=apidoc-generator-maven-plugin \
+    -DarchetypeArtifactId=maven-archetype-mojo \
+    -DinteractiveMode=false
+
+mvn archetype:generate \
+    -DgroupId=org.dreamcat \
+    -DartifactId=plugin-maven-example \
+    -DinteractiveMode=false
+-->

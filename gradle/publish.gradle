@@ -1,0 +1,77 @@
+apply plugin: 'maven-publish'
+
+/*
+1. Create request in
+https://issues.sonatype.org/secure/CreateIssue.jspa?issuetype=21&pid=10134
+2. Close and Release in
+https://oss.sonatype.org/#stagingRepositories
+3. Or Snapshot
+https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~org/dreamcat/
+ */
+def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+def isReleaseVersion = !version.endsWith("SNAPSHOT")
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name LICENCE_NAME
+            url LICENCE_URL
+            distribution LICENCE_DIST
+        }
+    }
+    developers {
+        developer {
+            id DEVELOPER_ID
+            name DEVELOPER_NAME
+            email DEVELOPER_EMAIL
+        }
+    }
+    scm {
+        url PROJECT_URL
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // components.web for war
+            from components.java
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', project.name)
+                root.appendNode('url', PROJECT_URL)
+                root.appendNode('description', PROJECT_DESCRIPTION)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url isReleaseVersion ? releasesRepoUrl : snapshotsRepoUrl
+            credentials {
+                username project.findProperty("oss.username") as String
+                password project.findProperty("oss.password") as String
+            }
+        }
+    }
+}

@@ -2,7 +2,9 @@ package org.dreamcat.cli.generator.apidoc;
 
 import java.util.Arrays;
 import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
@@ -12,74 +14,79 @@ import org.gradle.api.tasks.Nested;
  */
 public abstract class ApiDocGeneratorExtension {
 
+    abstract Property<Boolean> getVerbose();
+
     abstract Property<String> getOutputPath();
 
     abstract Property<Boolean> getRewrite();
 
-    abstract ListProperty<String> getClassDirs(); // class dir
-
-    abstract ListProperty<String> getJarDirs(); // jar dir
-
     abstract ListProperty<String> getBasePackages();
-
-    abstract ListProperty<String> getSrcDirs();
 
     abstract ListProperty<String> getJavaFileDirs(); // required
 
-    abstract Property<Boolean> getUseRelativeJavaFilePath();
-
     abstract ListProperty<String> getIgnoreInputParamTypes();
 
-    abstract Property<Boolean> getEnableMergeInputParam();
+    abstract Property<Boolean> getMergeInputParam();
 
-    abstract Property<Boolean> getEnableAutoDetect();
-
-    abstract Property<Boolean> getEnableSpringWeb();
+    abstract Property<Boolean> getAutoDetect();
 
     public ApiDocGeneratorExtension() {
         getRewrite().convention(false);
-        getUseRelativeJavaFilePath().convention(true);
         getIgnoreInputParamTypes().convention(Arrays.asList(
                 "org.springframework.web.multipart.MultipartFile",
                 "[B"
         ));
-        getEnableAutoDetect().convention(true);
-        getEnableSpringWeb().convention(true);
+        getAutoDetect().convention(true);
     }
 
     /// nested
 
     @Nested
-    abstract Text getText();
+    abstract JsonWithComment getJsonWithComment();
 
     @Nested
     abstract Swagger getSwagger();
 
-    public void jsonWithComment(Action<? super Text> action) {
-        action.execute(getText());
+    @Nested
+    abstract RendererPlugin getRendererPlugin();
+
+    public void jsonWithComment(Action<? super JsonWithComment> action) {
+        action.execute(getJsonWithComment());
     }
 
     public void swagger(Action<? super Swagger> action) {
         action.execute(getSwagger());
     }
 
+    public void rendererPlugin(Action<? super RendererPlugin> action) {
+        action.execute(getRendererPlugin());
+    }
+
+    abstract NamedDomainObjectContainer<Http> getHttp();
+
+    abstract NamedDomainObjectContainer<FunctionDoc> getFunctionDoc();
+
+    abstract NamedDomainObjectContainer<FieldDoc> getFieldDoc();
+
     /// data class
 
-    public abstract static class Text {
+    public abstract static class JsonWithComment {
 
         abstract Property<Boolean> getEnabled();
 
-        abstract Property<Boolean> getEnableJsonWithComment();
-
-        abstract Property<Boolean> getEnableIndentedTable();
-
+        // template
         abstract Property<String> getTemplate();
+
+        abstract MapProperty<String, String> getIncludeTemplates();
+
+        // jwc
+        abstract Property<Boolean> getFieldsNoRequired();
+
+        abstract Property<Boolean> getOutputParamAsIndentedTable();
 
         abstract Property<String> getNameHeader();
 
         abstract Property<String> getFunctionHeader();
-
-        abstract Property<String> getParamHeader();
 
         abstract Property<String> getInputParamTitle();
 
@@ -90,6 +97,8 @@ public abstract class ApiDocGeneratorExtension {
         abstract Property<String> getSeqPrefix();
 
         abstract Property<Integer> getMaxNestLevel();
+
+        abstract Property<String>  getIndentSpace();
 
         abstract Property<String> getIndentPrefix();
 
@@ -102,6 +111,8 @@ public abstract class ApiDocGeneratorExtension {
         abstract Property<String> getRequiredTrue();
 
         abstract Property<String> getRequiredFalse();
+
+        abstract Property<String> getRequiredNull();
     }
 
     public abstract static class Swagger {
@@ -111,11 +122,64 @@ public abstract class ApiDocGeneratorExtension {
         abstract Property<String> getDefaultTitle();
 
         abstract Property<String> getDefaultVersion();
+    }
 
-        abstract Property<String> getFieldNameAnnotation();
+    public abstract static class RendererPlugin {
 
-        abstract ListProperty<String> getFieldNameAnnotationName();
+        abstract Property<String> getPath();
 
-        abstract Property<Boolean> getUseJacksonFieldNameGetter();
+        //  support to inject env vars to string value
+        abstract MapProperty<String, Object> getInjectedArgs();
+    }
+
+    public interface Http {
+
+        String getName(); // for NamedDomainObjectContainer
+
+        Property<String> getPath();
+
+        ListProperty<String> getPathMethod();
+
+        Property<String> getAction();
+
+        ListProperty<String> getActionMethod();
+
+        Property<String> getPathVar();
+
+        ListProperty<String> getPathVarMethod();
+
+        Property<String> getRequired();
+
+        ListProperty<String> getRequiredMethod();
+    }
+
+    public interface FunctionDoc {
+
+        String getName();
+
+        Property<String> getAnnotationName();
+
+        ListProperty<String> getCommentMethod();
+
+        ListProperty<String> getNestedParamMethod();
+
+        ListProperty<String> getNestedParamNameMethod();
+
+        ListProperty<String> getNestedParamCommentMethod();
+
+        ListProperty<String> getNestedParamRequiredMethod();
+    }
+
+    public interface FieldDoc {
+
+        String getName();
+
+        Property<String> getAnnotationName();
+
+        ListProperty<String> getNameMethod();
+
+        ListProperty<String> getCommentMethod();
+
+        ListProperty<String> getRequiredMethod();
     }
 }

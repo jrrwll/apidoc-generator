@@ -1,7 +1,5 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.io.File;
-import java.io.IOException;
 import lombok.SneakyThrows;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -13,6 +11,12 @@ import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author Jerry Will
@@ -32,37 +36,46 @@ public class ApidocGeneratorAction implements Runnable {
 
     @SneakyThrows
     public void run() {
-        ClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(
-                project, mojo.getLocalRepository(), mojo.getVerbose(), log);
-        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project, log);
+        URLClassLoader userCodeClassLoader = ApiDocGeneratorUtil.buildUserCodeClassLoader(
+                project, mojo.getLocalRepository());
+        logDebug("userCodeClassLoader urls: {}", Arrays.toString(userCodeClassLoader.getURLs()));
 
-        Swagger swagger = mojo.getSwagger();
+        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project, log);
+        logDebug("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
+
+        boolean hasOutput = false;
         // swagger
-        if (swagger != null && swagger.getEnabled()) {
+        Swagger swagger = mojo.getSwagger();
+        if (swagger != null && Objects.equals(swagger.getEnabled(), true)) {
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildSwaggerRenderer(swagger);
             output(config, renderer, userCodeClassLoader);
-            return;
+            hasOutput = true;
         }
         // renderer plugin
         RendererPlugin rendererPlugin = mojo.getRendererPlugin();
         if (rendererPlugin != null && ObjectUtil.isNotEmpty(rendererPlugin.getPath())) {
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildExternalRenderer(rendererPlugin, userCodeClassLoader);
             output(config, renderer, userCodeClassLoader);
-            return;
+            hasOutput = true;
         }
 
+        // jwc, default renderer
         JsonWithComment jwc = mojo.getJsonWithComment();
         if (jwc == null) jwc = new JsonWithComment();
-        ApiDocRenderer renderer = ApiDocGeneratorUtil.buildJsonWithCommentRenderer(jwc);
-        output(config, renderer, userCodeClassLoader);
+        Boolean jwcEnabled = jwc.getEnabled();
+        if (Objects.equals(jwcEnabled, true) || (jwcEnabled == null && !hasOutput)) {
+            if (jwcEnabled == null) {
+                logInfo("render is unset, using jwc");
+            }
+            ApiDocRenderer renderer = ApiDocGeneratorUtil.buildJsonWithCommentRenderer(jwc);
+            output(config, renderer, userCodeClassLoader);
+        }
     }
 
     private void output(
             ApiDocParseConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader) throws Exception {
-        log.info("renderer: " + renderer.getClass().getName());
-        log.info("generate with config:\n" +
-                JsonUtil.toJsonWithPretty(config));
+        logInfo("renderer: {}", renderer.getClass().getName());
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
         String doc = generator.generate();
@@ -78,29 +91,29 @@ public class ApidocGeneratorAction implements Runnable {
         }
         File outputFile = new File(outputPath).getAbsoluteFile();
         if (outputFile.exists() && !rewrite) {
-            logError("output file already exists(set `rewrite = true` to confirm it): {}",
-                    outputFile);
+            log.error("output file already exists(set `rewrite = true` to confirm it): " + outputFile);
             return;
         }
 
         try {
             logInfo("writing to {}", outputFile);
-            FileUtil.writeFrom(outputFile, doc);
+            FileUtil.write(outputFile, doc);
             logInfo("done");
         } catch (IOException e) {
-            logError("error to write file {}, doc:\n {}", outputFile, doc);
+            log.error(StringUtil.formatMessage("error to write file {}, doc:\n {}",
+                    outputFile, doc), e);
         }
     }
 
     private void logInfo(String msg, Object... args) {
-        log.info(StringUtil.format(msg, args));
+        log.info(StringUtil.formatMessage(msg, args));
     }
 
     private void logWarn(String msg, Object... args) {
-        log.warn(StringUtil.format(msg, args));
+        log.warn(StringUtil.formatMessage(msg, args));
     }
 
-    private void logError(String msg, Object... args) {
-        log.error(StringUtil.format(msg, args));
+    private void logDebug(String msg, Object... args) {
+        log.debug(StringUtil.formatMessage(msg, args));
     }
 }

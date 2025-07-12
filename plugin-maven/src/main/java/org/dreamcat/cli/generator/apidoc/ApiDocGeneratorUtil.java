@@ -1,5 +1,24 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.JsonWithComment;
+import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.RendererPlugin;
+import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Swagger;
+import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
+import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.net.UrlUtil;
+import org.dreamcat.common.text.InterpolationUtil;
+import org.dreamcat.common.util.ObjectUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -16,24 +35,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
-import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.JsonWithComment;
-import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.RendererPlugin;
-import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Swagger;
-import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
-import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
-import org.dreamcat.common.io.UrlUtil;
-import org.dreamcat.common.json.JsonUtil;
-import org.dreamcat.common.text.InterpolationUtil;
-import org.dreamcat.common.util.ObjectUtil;
 
 /**
  * @author Jerry Will
@@ -41,27 +42,16 @@ import org.dreamcat.common.util.ObjectUtil;
  */
 public class ApiDocGeneratorUtil {
 
-    public static ClassLoader buildUserCodeClassLoader(
-            MavenProject project, ArtifactRepository localRepository,
-            boolean verbose, Log log) throws Exception {
+    public static URLClassLoader buildUserCodeClassLoader(
+            MavenProject project, ArtifactRepository localRepository) throws Exception {
         Set<String> classDirs = new HashSet<>();
         classDirs.add(MavenUtil.getClassDir(project));
         classDirs.addAll(orEmpty(MavenUtil.getCompileClasspath(project)));
         classDirs.addAll(orEmpty(MavenUtil.getRuntimeClasspath(project)));
-        if (verbose) {
-            log.info("classDirs: " + classDirs);
-        }
 
         List<File> dependencies = MavenUtil.getDependencies(project, localRepository);
-        if (verbose) {
-            log.info("dependencies: " + dependencies);
-        }
-
         URL[] urls = Stream.concat(dependencies.stream(), classDirs.stream().map(File::new))
                 .map(UrlUtil::toURL).toArray(URL[]::new);
-        if (verbose) {
-            log.info("classLoader urls: " + Arrays.toString(urls));
-        }
         return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
 
@@ -82,6 +72,11 @@ public class ApiDocGeneratorUtil {
 
         if (ObjectUtil.isNotEmpty(mojo.getIgnoreInputParamTypes())) {
             config.setIgnoreInputParamTypes(new HashSet<>(mojo.getIgnoreInputParamTypes()));
+        } else {
+            config.setIgnoreInputParamTypes(new HashSet<>(Arrays.asList(
+                    "org.springframework.web.multipart.MultipartFile",
+                    "[B"
+            )));
         }
         if (mojo.getMergeInputParam()) {
             config.setMergeInputParam(MergeInputParam.flatType());

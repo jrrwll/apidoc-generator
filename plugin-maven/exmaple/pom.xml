@@ -26,9 +26,22 @@
       <artifactId>spring-web</artifactId>
       <version>5.3.21</version>
     </dependency>
+    <dependency>
+      <groupId>javax.validation</groupId>
+      <artifactId>validation-api</artifactId>
+      <version>2.0.1.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.17.2</version>
+    </dependency>
   </dependencies>
+  <!--
+  mvn compile apidoc-generator:apidocGenerate
+  -->
   <build>
-    <sourceDirectory>../../src/test/java</sourceDirectory>
+    <sourceDirectory>../../src/test/share</sourceDirectory>
     <outputDirectory>../../build/classes/java/test</outputDirectory>
     <plugins>
       <plugin>
@@ -43,6 +56,12 @@
           </javaFileDirs>
           <mergeInputParam>true</mergeInputParam>
           <verbose>true</verbose>
+          <swagger>
+            <enabled>true</enabled>
+          </swagger>
+          <jsonWithComment>
+            <enabled>true</enabled>
+          </jsonWithComment>
         </configuration>
       </plugin>
     </plugins>

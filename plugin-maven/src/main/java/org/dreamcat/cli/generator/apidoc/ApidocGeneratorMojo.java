@@ -1,7 +1,5 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -12,6 +10,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jerry Will
@@ -67,6 +68,8 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     @Data
     public static class JsonWithComment {
 
+        @Parameter(defaultValue = "false")
+        private Boolean enabled;
         @Parameter
         private String template;
         @Parameter
@@ -111,7 +114,7 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     @Data
     public static class Swagger {
 
-        @Parameter(defaultValue = "true")
+        @Parameter(defaultValue = "false")
         private Boolean enabled;
         @Parameter
         private String defaultTitle;

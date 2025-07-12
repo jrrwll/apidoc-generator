@@ -1,12 +1,13 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.util.Arrays;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
+
+import java.util.Arrays;
 
 /**
  * @author Jerry Will
@@ -98,7 +99,7 @@ public abstract class ApiDocGeneratorExtension {
 
         abstract Property<Integer> getMaxNestLevel();
 
-        abstract Property<String>  getIndentSpace();
+        abstract Property<String> getIndentSpace();
 
         abstract Property<String> getIndentPrefix();
 

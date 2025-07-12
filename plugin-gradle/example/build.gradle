@@ -38,6 +38,10 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
 }
 
+/*
+./gradlew classes
+./gradlew apidocGenerate
+ */
 apidocGenerate {
     verbose = true
     javaFileDirs = ['com/example/biz/controller']

@@ -1,11 +1,5 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.dreamcat.common.net.UrlUtil;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -16,6 +10,13 @@ import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Stream;
+
 /**
  * @author Jerry Will
  * @version 2022-04-14
@@ -24,13 +25,13 @@ public class GradleUtil {
 
     /**
      * dependsOn some tasks
-     * 
+     *
      * @see JavaPlugin#JAR_TASK_NAME
      * @see JavaPlugin#COMPILE_JAVA_TASK_NAME
      */
     public static void dependsOn(Task task, String... taskNames) {
         Project project = task.getProject();
-        
+
         for (String taskName : taskNames) {
             Task t = project.getTasks().getByName(taskName);
             task.dependsOn(t);

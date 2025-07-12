@@ -1,15 +1,5 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
@@ -25,6 +15,17 @@ import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Provider;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will

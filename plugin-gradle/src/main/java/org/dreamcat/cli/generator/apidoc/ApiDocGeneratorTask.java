@@ -1,11 +1,5 @@
 package org.dreamcat.cli.generator.apidoc;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Objects;
-
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
@@ -14,6 +8,12 @@ import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.json.JsonUtil;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author Jerry Will
@@ -37,6 +37,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
         getLogger().info("userCodeClassPaths: " + Arrays.toString(userCodeClassLoader.getURLs()));
 
         ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(extension, getProject());
+        getLogger().info("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
 
         boolean hasOutput = false;
         // swagger
@@ -69,8 +70,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
     private void output(
             ApiDocParseConfig config, ApiDocRenderer renderer,
             ClassLoader userCodeClassLoader) throws IOException {
-        getLogger().info("generate with config: {}, renderer: {}",
-                JsonUtil.toJson(config), renderer.getClass().getSimpleName());
+        getLogger().info("renderer: {}", renderer.getClass().getName());
 
         ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
         String doc = generator.generate();

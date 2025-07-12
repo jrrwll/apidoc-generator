@@ -1,13 +1,13 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.project.MavenProject;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.project.MavenProject;
 
 /**
  * @author Jerry Will
@@ -35,7 +35,7 @@ public class MavenUtil {
         return project.getBuild().getSourceDirectory();
     }
 
-    public static @Nullable File getBaseDir(MavenProject project) {
+    public static File getBaseDir(MavenProject project) {
         File basedir;
         while ((basedir = project.getBasedir()) == null) {
             project = project.getParent();

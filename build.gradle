@@ -2,14 +2,20 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+        maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
     }
+
     apply plugin: 'java'
-    java.sourceCompatibility = JavaVersion.VERSION_1_8
+
     compileJava.options.encoding = 'UTF-8'
     compileTestJava.options.encoding = 'UTF-8'
+    javadoc.options.encoding = 'UTF-8'
     compileJava.options.compilerArgs.add '-parameters'
     compileTestJava.options.compilerArgs.add '-parameters'
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
 
     version = VERSION
     group = GROUP_ID

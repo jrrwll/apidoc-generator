@@ -87,6 +87,10 @@
     </dependency>
   </dependencies>
 
+  <!--
+  mvn verify -Dgpg.passphrase=$GPG_PASSPHRASE
+  mvn install deploy -Dmaven.test.skip=true -Dgpg.passphrase=$GPG_PASSPHRASE
+  -->
   <build>
     <plugins>
       <!-- maven plugin develop -->
@@ -144,7 +148,6 @@
             <id>sign-artifacts</id>
             <phase>verify</phase>
             <goals>
-              <!-- mvn install -Dmaven.test.skip=true -Dgpg.passphrase=$GPG_PASSPHRASE -->
               <goal>sign</goal>
             </goals>
           </execution>
@@ -160,12 +163,12 @@
     <snapshotRepository>
       <id>sonatype-nexus-snapshots</id>
       <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots</url>
     </snapshotRepository>
     <repository>
-      <id>sonatype-nexus-staging</id>
+      <id>sonatype-nexus-releases</id>
       <name>Nexus Release Repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <url>https://central.sonatype.com/repository/maven-releases</url>
     </repository>
   </distributionManagement>
 </project>

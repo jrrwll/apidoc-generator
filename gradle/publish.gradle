@@ -1,19 +1,39 @@
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
 /*
-1. Create request in
-https://issues.sonatype.org/secure/CreateIssue.jspa?issuetype=21&pid=10134
-2. Close and Release in
-https://oss.sonatype.org/#stagingRepositories
-3. Or Snapshot
-https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~org/dreamcat/
- */
-def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+https://central.sonatype.com/account
+
+User Token -> oss.username/oss.password
+
+https://central.sonatype.com/namespace/org.dreamcat
+*/
+def releasesRepoUrl = "https://central.sonatype.com/repository/maven-releases"
+def snapshotsRepoUrl = "https://central.sonatype.com/repository/maven-snapshots"
 def isReleaseVersion = !version.endsWith("SNAPSHOT")
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
+javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
+
+tasks.register('sourcesJar', Jar) {
+    onlyIf { isReleaseVersion }
+    archiveClassifier.set 'sources'
+    from sourceSets.main.allJava
+}
+
+tasks.register('javadocJar', Jar) {
+    onlyIf { isReleaseVersion }
+    archiveClassifier.set 'javadoc'
+    from javadoc.destinationDir
+}
+
+if (isReleaseVersion) {
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
 }
 
 def pomConfig = {
@@ -38,9 +58,13 @@ def pomConfig = {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            // components.web for war
+        maven(MavenPublication) {
             from components.java
+            // don't share source code any more
+            // if (isReleaseVersion) {
+            //     artifact sourcesJar
+            //     artifact javadocJar
+            // }
 
             versionMapping {
                 usage('java-api') {
@@ -62,6 +86,10 @@ publishing {
                 root.appendNode('description', PROJECT_DESCRIPTION)
                 root.children().last() + pomConfig
             }
+
+            // testFixtures in Gradle 6+ is supported
+            suppressPomMetadataWarningsFor("testFixturesApiElements")
+            suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
         }
     }
 
@@ -74,4 +102,14 @@ publishing {
             }
         }
     }
+}
+
+tasks.withType(Sign).configureEach {
+    onlyIf { isReleaseVersion }
+}
+
+// signing.keyId, signing.password, signing.secretKeyRingFile
+signing {
+    required { isReleaseVersion }
+    sign publishing.publications.maven
 }

@@ -6,14 +6,19 @@ import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.util.AssertUtil;
+import org.dreamcat.common.util.ObjectUtil;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -21,28 +26,38 @@ import java.util.Map;
  * @version 2022-07-11
  */
 @Getter
-@RequiredArgsConstructor
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(Include.NON_EMPTY)
 public class TextTemplateRenderer implements ApiDocRenderer {
 
-    private final String template;
-    private final Map<String, String> includeTemplates;
+    private String template;
+    private Map<String, String> includeTemplates;
 
-    public TextTemplateRenderer(String template) {
-        this(template, Collections.emptyMap());
+    @Override
+    public String getOutputFileSuffix() {
+        return "md";
     }
 
     @Override
-    public void render(ApiDoc apiDoc, Writer out) {
-        Map<String, Object> context = JsonUtil.toMap(apiDoc);
-        process(template, context, out, includeTemplates);
+    public String render(ApiDoc doc) throws IOException {
+        AssertUtil.requireNotNull(template, "template");
+
+        try (StringWriter out = new StringWriter()) {
+            Map<String, Object> context = JsonUtil.toMap(doc);
+            process(template, context, out, includeTemplates);
+            return out.toString();
+        }
     }
 
     @SneakyThrows
     protected static void process(
             String content, Map<String, Object> context, Writer out, Map<String, String> includes) {
         StringTemplateLoader templateLoader = new StringTemplateLoader();
-        includes.forEach(templateLoader::putTemplate);
+        if (ObjectUtil.isNotEmpty(includes)) {
+            includes.forEach(templateLoader::putTemplate);
+        }
         templateLoader.putTemplate("", content);
 
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);

@@ -15,6 +15,12 @@ import java.util.Map;
 public class SwaggerResponse {
 
     private String description;
-    private SwaggerSchema schema;
     private Map<String, SwaggerHeader> headers;
+
+    // 3.0
+    private Map<String, SwaggerContent> content; // such as: application/json
+
+    // 2.0
+    private SwaggerSchema schema;
+
 }

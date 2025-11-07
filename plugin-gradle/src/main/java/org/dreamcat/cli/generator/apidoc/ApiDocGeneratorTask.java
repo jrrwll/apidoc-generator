@@ -4,16 +4,21 @@ import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithCommen
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.util.StringUtil;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.TaskAction;
 
+import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -21,38 +26,49 @@ import java.util.Objects;
  */
 public class ApiDocGeneratorTask extends DefaultTask {
 
-    // private final ApiDocGeneratorExtension extension;
+    private final ApiDocGeneratorExtension extension;
+    private final JavaPluginExtension javaPluginExtension;
+    private final Configuration compileConfiguration;
 
-    // @javax.inject.Inject
-    // public ApiDocGeneratorTask(Project project, ApiDocGeneratorExtension extension) {
-    //     this.extension = extension;
-    // }
+    @Inject
+    public ApiDocGeneratorTask(Project project) {
+        this.extension = project.getExtensions()
+                .getByType(ApiDocGeneratorExtension.class);
+        this.javaPluginExtension = project.getExtensions()
+                .getByType(JavaPluginExtension.class);
+
+        this.compileConfiguration = GradleUtil.getCompileClasspath(project);
+    }
 
     @TaskAction
     public void run() throws Exception {
-        ApiDocGeneratorExtension extension = getProject().getExtensions()
-                .getByType(ApiDocGeneratorExtension.class);
-
-        URLClassLoader userCodeClassLoader = GradleUtil.buildUserCodeClassLoader(getProject());
+        URLClassLoader userCodeClassLoader = GradleUtil.buildUserCodeClassLoader(javaPluginExtension, compileConfiguration);
         getLogger().info("userCodeClassPaths: " + Arrays.toString(userCodeClassLoader.getURLs()));
 
-        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(extension, getProject());
+        List<String> srcDirs = GradleUtil.getSrcDirs(javaPluginExtension).stream()
+                .map(File::getPath).collect(Collectors.toList());
+        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(extension, srcDirs);
         getLogger().info("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
 
+        ApiDocGenerator generator = new ApiDocGenerator(config, userCodeClassLoader);
+        generator.setInfoLogger(this::logInfo);
+        generator.setErrorLogger(this::logError);
+
         boolean hasOutput = false;
+        File outputDir = extension.getOutputDir().map(File::new).getOrNull();
         // swagger
         Swagger swagger = extension.getSwagger();
         if (swagger.getEnabled().getOrElse(false)) {
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildSwaggerRenderer(swagger);
-            output(config, renderer, userCodeClassLoader);
+            generator.generate(renderer, outputDir);
             hasOutput = true;
         }
-        // renderer plugin
+        // renderer plugin, not support
         RendererPlugin rendererPlugin = extension.getRendererPlugin();
         if (rendererPlugin.getPath().getOrNull() != null) {
             getLogger().quiet("path: " + new File(rendererPlugin.getPath().get()).getCanonicalPath());
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildExternalRenderer(rendererPlugin, userCodeClassLoader);
-            output(config, renderer, userCodeClassLoader);
+            generator.generate(renderer, outputDir);
             hasOutput = true;
         }
         // jwc, default renderer
@@ -63,44 +79,15 @@ public class ApiDocGeneratorTask extends DefaultTask {
                 getLogger().quiet("render is unset, using jwc");
             }
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildJsonWithCommentRenderer(jwc);
-            output(config, renderer, userCodeClassLoader);
+            generator.generate(renderer, outputDir);
         }
     }
 
-    private void output(
-            ApiDocParseConfig config, ApiDocRenderer renderer,
-            ClassLoader userCodeClassLoader) throws IOException {
-        getLogger().info("renderer: {}", renderer.getClass().getName());
+    private void logInfo(String msg, Object... args) {
+        getLogger().info(StringUtil.formatMessage(msg, args));
+    }
 
-        ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
-        String doc = generator.generate();
-
-        ApiDocGeneratorExtension extension = getProject().getExtensions()
-                .getByType(ApiDocGeneratorExtension.class);
-        String outputPath = extension.getOutputPath().getOrNull();
-        boolean rewrite = extension.getRewrite().get();
-        if (outputPath == null) {
-            if (getLogger().isInfoEnabled()) {
-                getLogger().warn("only print doc since `outputPath` is unset");
-            }
-            getLogger().quiet("********** Generated Doc **********");
-            getLogger().quiet(doc); // print doc to console
-            getLogger().quiet("***********************************");
-            return;
-        }
-        File outputFile = new File(outputPath).getAbsoluteFile();
-        if (outputFile.exists() && !rewrite) {
-            getLogger().error(
-                    "output file already exists(set `rewrite = true` to confirm it): {}", outputFile);
-            return;
-        }
-
-        try {
-            getLogger().info("writing to {}", outputFile);
-            FileUtil.write(outputFile, doc);
-            getLogger().info("done");
-        } catch (IOException e) {
-            getLogger().error("error to write file {}, doc:\n {}", outputFile, doc);
-        }
+    private void logError(String msg, Object... args) {
+        getLogger().error(StringUtil.formatMessage(msg, args));
     }
 }

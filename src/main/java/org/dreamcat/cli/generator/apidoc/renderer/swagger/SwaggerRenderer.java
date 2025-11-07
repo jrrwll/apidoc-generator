@@ -1,66 +1,99 @@
 package org.dreamcat.cli.generator.apidoc.renderer.swagger;
 
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.Getter;
 import lombok.Setter;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.HttpPushConfig;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Components;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Info;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.Swagger.Tag;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerParameter.In;
+import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerPath.SwaggerRequestBody;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.json.YamlUtil;
 import org.dreamcat.common.reflect.ObjectType;
 import org.dreamcat.common.util.ByteUtil;
 import org.dreamcat.common.util.FunctionUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.RandomUtil;
-import org.dreamcat.common.util.ReflectUtil;
+import org.dreamcat.common.util.StringUtil;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * @author Jerry Will
  * @version 2022-01-04
  */
+@Slf4j
+@Getter
 @Setter
-@NoArgsConstructor
+@Accessors(chain = true)
+@JsonInclude(Include.NON_EMPTY)
 public class SwaggerRenderer implements ApiDocRenderer {
 
-    private String defaultTitle = "";
-    private String defaultVersion = "";
-    // private String fieldNameAnnotation;
-    // private List<String> fieldNameAnnotationName;
-    private Function<Field, String> fieldNameGetter = Field::getName;
-    private ClassLoader classLoader;
+    private boolean swagger2; // use swagger 2.0 rather than openapi 3.0
+    private String defaultTitle = "Swagger Doc";
+    private String defaultVersion = "0.1";
+    private HttpPushConfig httpPush;
+    private boolean formatAsJson; // json or yaml, default is yaml
 
-    public SwaggerRenderer(ApiDocParseConfig config) {
-        this.fieldNameGetter = field -> getFieldName(field, config);
+    @JsonIgnore
+    @Override
+    public String getOutputFileSuffix() {
+        if (formatAsJson) {
+            return "json";
+        } else {
+            return "yaml";
+        }
     }
 
     @Override
-    public void render(ApiDoc apiDoc, Writer out) throws IOException {
-        Swagger swagger = renderSwagger(apiDoc);
-        String s = swagger.toYaml();
-        out.write(s);
+    public String render(ApiDoc doc) throws IOException {
+        Swagger swagger = renderSwagger(doc);
+        String s;
+        if (formatAsJson) {
+            s = JsonUtil.toJson(swagger);
+        } else {
+            s = YamlUtil.toJson(swagger);
+        }
+
+        if (httpPush != null) {
+            Map<String, String> context = new HashMap<>();
+            String swaggerJson = JsonUtil.toJson(swagger);
+
+            context.put("swagger", s);
+            context.put("swaggerJson", swaggerJson);
+            context.put("swaggerJsonEscaped", StringUtil.escape(swaggerJson, '"'));
+            httpPush.pushDoc(context);
+        }
+        return s;
     }
 
     private Swagger renderSwagger(ApiDoc apiDoc) {
         Swagger swagger = new Swagger();
+        if (swagger2) {
+            swagger.setSwagger(Swagger.SWAGGER_VERSION);
+        } else {
+            swagger.setOpenapi(Swagger.OPENAPI_VERSION);
+        }
         renderInfo(apiDoc, swagger);
 
         List<Tag> tags = new ArrayList<>();
@@ -86,10 +119,8 @@ public class SwaggerRenderer implements ApiDocRenderer {
     }
 
     private void renderInfo(ApiDoc apiDoc, Swagger swagger) {
-        String title = apiDoc.getName();
-        if (ObjectUtil.isBlank(title)) title = defaultTitle;
-        String version = apiDoc.getVersion();
-        if (ObjectUtil.isBlank(version)) version = defaultVersion;
+        String title = FunctionUtil.firstNotNull(apiDoc.getName(), defaultTitle);
+        String version = FunctionUtil.firstNotNull(apiDoc.getVersion(), defaultVersion);
 
         Info info = new Info();
         info.setTitle(title);
@@ -97,7 +128,9 @@ public class SwaggerRenderer implements ApiDocRenderer {
         info.setDescription(apiDoc.getComment());
         swagger.setInfo(info);
 
-        swagger.setSchemes(Arrays.asList("https", "http"));
+        if (swagger2) {
+            swagger.setSchemes(Arrays.asList("http", "https"));
+        }
     }
 
     private void renderFunction(ApiFunction function, String tagName,
@@ -114,7 +147,7 @@ public class SwaggerRenderer implements ApiDocRenderer {
 
         Map<String, Map<SwaggerMethod, SwaggerPath>> swaggerPaths = new HashMap<>();
         for (String path : paths) {
-            path = path.replaceFirst("\\{(.*?)}", "\\$$1");
+            // path = path.replaceFirst("\\{(.*?)}", "\\$$1");
             Map<SwaggerMethod, SwaggerPath> swaggerPathMap = swaggerPaths.computeIfAbsent(
                     path, it -> new HashMap<>());
             for (String action : actions) {
@@ -133,20 +166,30 @@ public class SwaggerRenderer implements ApiDocRenderer {
 
         String operationId = formatOperationId(function, action, path);
         swaggerPath.setOperationId(operationId);
-        swaggerPath.setConsumes(function.getConsumes());
-        swaggerPath.setProduces(function.getProduces());
 
         List<ApiInputParam> inputParams = function.getInputParams();
         List<SwaggerParameter> parameters = new ArrayList<>();
         if (function.isInputParamsMerged()) {
             List<ApiParamField> fields = inputParams.get(0).getFields();
             for (ApiParamField field : fields) {
-                SwaggerParameter parameter = formatParameter(field);
+                SwaggerParameter parameter = formatParameter(field, swagger);
+                // openapi 3.0 case
+                if (!swagger2 && parameter.getIn() == SwaggerParameter.In.body) {
+                    SwaggerRequestBody requestBody = formatRequestBody(parameter);
+                    swaggerPath.setRequestBody(requestBody);
+                    continue;
+                }
                 parameters.add(parameter);
             }
         } else {
             for (ApiInputParam inputParam : inputParams) {
                 SwaggerParameter parameter = formatParameter(inputParam, swagger);
+                // openapi 3.0 case
+                if (!swagger2 && parameter.getIn() == SwaggerParameter.In.body) {
+                    SwaggerRequestBody requestBody = formatRequestBody(parameter);
+                    swaggerPath.setRequestBody(requestBody);
+                    continue;
+                }
                 parameters.add(parameter);
             }
         }
@@ -155,6 +198,10 @@ public class SwaggerRenderer implements ApiDocRenderer {
         SwaggerResponse response = formatResponse(function.getOutputParam(), swagger);
         swaggerPath.setResponses(Collections.singletonMap("200", response));
 
+        if (swagger2) {
+            swaggerPath.setConsumes(function.getConsumes());
+            swaggerPath.setProduces(function.getProduces());
+        }
         return swaggerPath;
     }
 
@@ -179,34 +226,76 @@ public class SwaggerRenderer implements ApiDocRenderer {
         if (inputParam.getRequired() != null) {
             parameter.setIn(In.query);
             parameter.setName(name);
-            parameter.setType(swaggerType);
+            if (swagger2) {
+                parameter.setType(swaggerType);
+            } else {
+                SwaggerSchema schema = new SwaggerSchema();
+                schema.setType(swaggerType);
+                parameter.setSchema(schema);
+            }
         } else if (pathVar != null) {
             parameter.setIn(In.path);
             parameter.setName(pathVar);
-            parameter.setType(swaggerType);
+            if (swagger2) {
+                parameter.setType(swaggerType);
+            } else {
+                SwaggerSchema schema = new SwaggerSchema();
+                schema.setType(swaggerType);
+                parameter.setSchema(schema);
+            }
         } else {
             parameter.setIn(In.body);
             parameter.setName(name);
             SwaggerSchema schema = swagger.getTypeSchemaCache().computeIfAbsent(
-                    type, it -> formatSchema(it, swagger));
+                    type, it -> formatSchema(it, inputParam.getComment(), inputParam.getFields(), swagger));
             parameter.setSchema(schema);
         }
 
         return parameter;
     }
 
-    private SwaggerParameter formatParameter(ApiParamField field) {
+    private SwaggerParameter formatParameter(ApiParamField field, Swagger swagger) {
         SwaggerParameter parameter = new SwaggerParameter();
         parameter.setName(field.getName());
         parameter.setDescription(field.getComment());
         parameter.setRequired(field.getRequired());
-        parameter.setType(SwaggerType.parse(field.getType()));
+
+        ObjectType type = field.getType();
+        if (swagger2) {
+            parameter.setType(SwaggerType.parse(type.getType()));
+        }
+
         if (ObjectUtil.isEmpty(field.getFields())) {
             parameter.setIn(In.query);
+            if(SwaggerType.array.equals(parameter.getType())) {
+                SwaggerType arrayType = SwaggerType.parse(type.getParameterType(0).getType());
+                SwaggerDefinition items = new SwaggerDefinition();
+                items.setType(arrayType);
+                parameter.setItems(items);
+            }
+            if (!swagger2) {
+                SwaggerSchema schema = new SwaggerSchema();
+                schema.setType(SwaggerType.parse(type.getType()));
+                parameter.setSchema(schema);
+            }
         } else {
             parameter.setIn(In.body);
+            if (!swagger2) {
+                SwaggerSchema schema = swagger.getTypeSchemaCache().computeIfAbsent(
+                        type, it -> formatSchema(it, field.getComment(), field.getFields(), swagger));
+                parameter.setSchema(schema);
+            }
         }
         return parameter;
+    }
+
+    private SwaggerRequestBody formatRequestBody(SwaggerParameter parameter) {
+        SwaggerRequestBody requestBody = new SwaggerRequestBody();
+        requestBody.setDescription(parameter.getDescription());
+        SwaggerContent content = new SwaggerContent();
+        content.setSchema(parameter.getSchema());
+        requestBody.setContent(Collections.singletonMap("application/json", content));
+        return requestBody;
     }
 
     private SwaggerResponse formatResponse(ApiOutputParam outputParam, Swagger swagger) {
@@ -216,12 +305,18 @@ public class SwaggerRenderer implements ApiDocRenderer {
         response.setDescription(type.getSimpleName());
 
         SwaggerSchema schema = swagger.getTypeSchemaCache().computeIfAbsent(
-                type, it -> formatSchema(it, swagger));
-        response.setSchema(schema);
+                type, it -> formatSchema(it, outputParam.getComment(), outputParam.getFields(), swagger));
+        if (swagger2) {
+            response.setSchema(schema);
+        } else {
+            SwaggerContent content = new SwaggerContent();
+            content.setSchema(schema);
+            response.setContent(Collections.singletonMap("application/json", content));
+        }
         return response;
     }
 
-    private SwaggerSchema formatSchema(ObjectType type, Swagger swagger) {
+    private SwaggerSchema formatSchema(ObjectType type, String comment, List<ApiParamField> paramFields, Swagger swagger) {
         SwaggerSchema schema = new SwaggerSchema();
         String defName = formatDefinitionName(type), defName0 = defName;
 
@@ -231,15 +326,32 @@ public class SwaggerRenderer implements ApiDocRenderer {
             defName = defName0 + retry++;
         }
         if (defNameSchemaCache.containsKey(defName)) defName = RandomUtil.uuid32();
-        schema.setRef("#/definitions/" + defName);
+        String refPrefix = "#/components/schemas/";
+        if (swagger2) {
+            refPrefix = "#/definitions/";
+        }
+        schema.setRef(refPrefix + defName);
 
-        Map<String, SwaggerDefinition> definitions = swagger.getDefinitions();
-        if (definitions == null) {
-            definitions = new HashMap<>();
-            swagger.setDefinitions(definitions);
+        Map<String, SwaggerDefinition> definitions;
+        if (swagger2) {
+            definitions = swagger.getDefinitions();
+            if (definitions == null) {
+                definitions = new HashMap<>();
+                swagger.setDefinitions(definitions);
+            }
+        } else {
+            Components components = swagger.getComponents();
+            if (components == null) {
+                components = new Components();
+                swagger.setComponents(components);
+                definitions = new HashMap<>();
+                components.setSchemas(definitions);
+            } else {
+                definitions = components.getSchemas();
+            }
         }
 
-        SwaggerDefinition definition = SwaggerDefinition.parse(type, swagger, fieldNameGetter);
+        SwaggerDefinition definition = SwaggerDefinition.parse(type, comment, paramFields, swagger);
         definitions.put(defName, definition);
 
         return schema;
@@ -250,30 +362,5 @@ public class SwaggerRenderer implements ApiDocRenderer {
         return defName.replace("<", "_")
                 .replace(">", "")
                 .replace(", ", "");
-    }
-
-    private String getFieldName(Field field, ApiDocParseConfig config) {
-        if (ObjectUtil.isEmpty(config.getFieldDoc())) return field.getName();
-
-        for (FieldDoc fieldDoc : config.getFieldDoc()) {
-            if (ObjectUtil.isEmpty(fieldDoc.getName()) ||
-                    ObjectUtil.isEmpty(fieldDoc.getNameMethod())) continue;
-            Class<? extends Annotation> annType;
-            if (classLoader == null) {
-                annType = ReflectUtil.forName(fieldDoc.getName());
-            } else {
-                annType = ReflectUtil.forName(fieldDoc.getName(), classLoader);
-            }
-            Object annoObj = field.getDeclaredAnnotation(annType);
-            if (annoObj == null) continue;
-
-            for (String method : fieldDoc.getNameMethod()) {
-                Object nameObj = ReflectUtil.invoke(annoObj, method);
-                if (nameObj == null) continue;
-                if (nameObj instanceof String && nameObj.toString().isEmpty()) continue;
-                return nameObj.toString();
-            }
-        }
-        return field.getName(); // default use field name
     }
 }

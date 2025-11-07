@@ -1,22 +1,25 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.HttpPush;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.JsonWithComment;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApiDocGeneratorExtension.Swagger;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
-import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.ServiceDoc;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.HttpPushConfig;
 import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
+import org.dreamcat.common.Pair;
+import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.text.InterpolationUtil;
 import org.dreamcat.common.util.ObjectUtil;
-import org.gradle.api.Project;
+import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,65 +39,60 @@ public class ApiDocGeneratorUtil {
     private ApiDocGeneratorUtil() {
     }
 
-    public static ApiDocParseConfig buildApiDocConfig(ApiDocGeneratorExtension extension, Project project) {
-        List<String> srcDirs = GradleUtil.getSrcDirs(project).stream()
-                .map(File::getPath).collect(Collectors.toList());
-
-        ApiDocParseConfig config = new ApiDocParseConfig();
+    public static ApiDocParseConfig buildApiDocConfig(ApiDocGeneratorExtension extension, List<String> srcDirs) {
+        ApiDocParseConfig config;
+        String extraConfigJson = extension.getExtraConfigJson().getOrNull();
+        if (extraConfigJson != null) {
+            config = JsonUtil.fromJson(extraConfigJson, ApiDocParseConfig.class);
+        } else {
+            config = new ApiDocParseConfig();
+        }
         config.setSrcDirs(srcDirs);
 
         setIf(config::setVerbose, extension.getVerbose());
         setIf(config::setBasePackages, extension.getBasePackages());
         config.setJavaFileDirs(extension.getJavaFileDirs().get());
 
-        config.setIgnoreInputParamTypes(new HashSet<>(extension.getIgnoreInputParamTypes().get()));
+        config.setIgnoreInputParamTypes(new HashSet<>(extension.getIgnoreInputParamTypes()
+                .getOrElse(Collections.emptyList())));
+        config.setIgnoreParamNames(new HashSet<>(extension.getIgnoreParamNames()
+                .getOrElse(Collections.emptyList())));
+
         if (extension.getMergeInputParam().getOrElse(false)) {
             config.setMergeInputParam(MergeInputParam.flatType());
         }
 
         config.setAutoDetect(extension.getAutoDetect().get());
-        List<Http> httpList = extension.getHttp().getAsMap().values().stream().map(it -> {
-            Http http = new Http();
-            setIf(http::setPath, it.getPath());
-            setIf(http::setPathMethod, it.getPathMethod());
-            setIf(http::setAction, it.getAction());
-            setIf(http::setActionMethod, it.getActionMethod());
-            setIf(http::setPathVar, it.getPathVar());
-            setIf(http::setPathVarMethod, it.getPathVarMethod());
-            setIf(http::setRequired, it.getRequired());
-            setIf(http::setRequiredMethod, it.getRequiredMethod());
-            if (http.getPath() == null && http.getAction() == null &&
-                    http.getPathVar() == null && http.getRequired() == null) {
-                return null;
-            }
-            return http;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-        if (!httpList.isEmpty()) config.setHttp(httpList);
 
-        List<FunctionDoc> functionDocs = extension.getFunctionDoc()
-                .getAsMap().values().stream().map(it -> {
-                    FunctionDoc doc = new FunctionDoc();
-                    setIf(doc::setName, it.getAnnotationName());
-                    setIf(doc::setCommentMethod, it.getCommentMethod());
-                    setIf(doc::setNestedParamMethod, it.getNestedParamMethod());
-                    setIf(doc::setNestedParamNameMethod, it.getNestedParamNameMethod());
-                    setIf(doc::setNestedParamCommentMethod, it.getNestedParamCommentMethod());
-                    setIf(doc::setNestedParamRequiredMethod, it.getNestedParamRequiredMethod());
-                    if (doc.getName() == null) return null;
-                    return doc;
-                }).filter(Objects::nonNull).collect(Collectors.toList());
+        List<ServiceDoc> serviceDocs = extension.getServiceDoc().getAsMap().values().stream().map(it -> {
+            ServiceDoc doc = new ServiceDoc();
+            setIf(doc::setName, it.getAnnotationName());
+            setIf(doc::setNameMethod, it.getNameMethod());
+            setIf(doc::setCommentMethod, it.getCommentMethod());
+            return doc.getName() != null ? doc : null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (!serviceDocs.isEmpty()) config.setServiceDoc(serviceDocs);
+
+        List<FunctionDoc> functionDocs = extension.getFunctionDoc().getAsMap().values().stream().map(it -> {
+            FunctionDoc doc = new FunctionDoc();
+            setIf(doc::setName, it.getAnnotationName());
+            setIf(doc::setCommentMethod, it.getCommentMethod());
+            setIf(doc::setNestedParamMethod, it.getNestedParamMethod());
+            setIf(doc::setNestedParamNameMethod, it.getNestedParamNameMethod());
+            setIf(doc::setNestedParamCommentMethod, it.getNestedParamCommentMethod());
+            setIf(doc::setNestedParamRequiredMethod, it.getNestedParamRequiredMethod());
+            return doc.getName() != null ? doc : null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFunctionDoc(functionDocs);
 
-        List<FieldDoc> fieldDocs = extension.getFieldDoc()
-                .getAsMap().values().stream().map(it -> {
-                    FieldDoc doc = new FieldDoc();
-                    setIf(doc::setName, it.getAnnotationName());
-                    setIf(doc::setNameMethod, it.getNameMethod());
-                    setIf(doc::setCommentMethod, it.getCommentMethod());
-                    setIf(doc::setRequiredMethod, it.getRequiredMethod());
-                    if (doc.getName() == null) return null;
-                    return doc;
-                }).filter(Objects::nonNull).collect(Collectors.toList());
+        List<FieldDoc> fieldDocs = extension.getFieldDoc().getAsMap().values().stream().map(it -> {
+            FieldDoc doc = new FieldDoc();
+            setIf(doc::setName, it.getAnnotationName());
+            setIf(doc::setNameMethod, it.getNameMethod());
+            setIf(doc::setCommentMethod, it.getCommentMethod());
+            setIf(doc::setRequiredMethod, it.getRequiredMethod());
+            return doc.getName() != null ? doc : null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFieldDoc(fieldDocs);
         return config;
     }
@@ -107,7 +105,16 @@ public class ApiDocGeneratorUtil {
             return new TextTemplateRenderer(template, includeTemplates);
         }
 
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        String lang = text.getLang().getOrNull();
+        if (lang == null && text.getI18n().getOrElse(false)) {
+            lang = System.getenv("LANG");
+        }
+        JsnoWithCommentRenderer renderer;
+        if (lang != null) {
+            renderer = JsnoWithCommentRenderer.fromI18n(lang);
+        } else {
+            renderer = new JsnoWithCommentRenderer();
+        }
         setIf(renderer::setFieldsNoRequired, text.getFieldsNoRequired());
         setIf(renderer::setOutputParamAsIndentedTable, text.getOutputParamAsIndentedTable());
 
@@ -117,6 +124,7 @@ public class ApiDocGeneratorUtil {
         setIf(renderer::setOutputParamTitle, text.getOutputParamTitle());
         setIf(renderer::setPinFunctionComment, text.getPinFunctionComment());
         setIf(renderer::setSeqPrefix, text.getSeqPrefix());
+        setIf(renderer::setSeqOffset, text.getSeqOffset());
 
         setIf(renderer::setMaxNestLevel, text.getMaxNestLevel());
         setIf(renderer::setIndentSpace, text.getIndentSpace());
@@ -133,7 +141,33 @@ public class ApiDocGeneratorUtil {
     public static ApiDocRenderer buildSwaggerRenderer(Swagger swagger) {
         SwaggerRenderer renderer = new SwaggerRenderer();
         setIf(renderer::setDefaultTitle, swagger.getDefaultTitle());
+        setIf(renderer::setSwagger2, swagger.getSwagger2());
         setIf(renderer::setDefaultVersion, swagger.getDefaultVersion());
+        setIf(renderer::setFormatAsJson, swagger.getFormatAsJson());
+
+        HttpPush httpPush = swagger.getHttpPush();
+        if (httpPush != null && httpPush.getUrl().isPresent()) {
+            HttpPushConfig httpPushConfig = new HttpPushConfig();
+            httpPushConfig.setUrl(httpPush.getUrl().get());
+            httpPushConfig.setHeaders(httpPush.getHeaders().getOrNull());
+
+            Map<String, Object> json = httpPush.getJson().getOrNull();
+            // Object in MapProperty<String, Object> could be a Property, so revolse it
+            if (ObjectUtil.isNotEmpty(json)) {
+                json = json.entrySet().stream().map(it -> {
+                    Object value = it.getValue();
+                    if (value instanceof Property) {
+                        value = ((Property<?>) value).getOrNull();
+                    }
+                    return Pair.of(it.getKey(), value);
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                httpPushConfig.setJson(json);
+            }
+
+            httpPushConfig.setText(httpPush.getText().getOrNull());
+            httpPushConfig.setForm(httpPush.getForm().getOrNull());
+            renderer.setHttpPush(httpPushConfig);
+        }
         return renderer;
     }
 
@@ -151,7 +185,7 @@ public class ApiDocGeneratorUtil {
             });
             injectedArgs = args;
         }
-        return ApiDocRenderer.loadFromPath(path, injectedArgs, classLoader);
+        return ApiDocRenderer.loadFromPath(injectedArgs, path, classLoader);
     }
 
     private static <T> void setIf(Consumer<T> setter, Provider<T> provider) {

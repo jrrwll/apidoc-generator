@@ -7,13 +7,11 @@ import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.JsonWithComment;
 import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Swagger;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
-import org.dreamcat.common.io.FileUtil;
 import org.dreamcat.common.json.JsonUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,19 +41,24 @@ public class ApidocGeneratorAction implements Runnable {
         ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project, log);
         logDebug("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
 
+        ApiDocGenerator generator = new ApiDocGenerator(config, userCodeClassLoader);
+        generator.setInfoLogger(this::logInfo);
+        generator.setErrorLogger(this::logError);
+
         boolean hasOutput = false;
+        File outputDir = mojo.getOutputDir() != null ? new File(mojo.getOutputDir()) : null;
         // swagger
         Swagger swagger = mojo.getSwagger();
         if (swagger != null && Objects.equals(swagger.getEnabled(), true)) {
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildSwaggerRenderer(swagger);
-            output(config, renderer, userCodeClassLoader);
+            generator.generate(renderer, outputDir);
             hasOutput = true;
         }
         // renderer plugin
         RendererPlugin rendererPlugin = mojo.getRendererPlugin();
         if (rendererPlugin != null && ObjectUtil.isNotEmpty(rendererPlugin.getPath())) {
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildExternalRenderer(rendererPlugin, userCodeClassLoader);
-            output(config, renderer, userCodeClassLoader);
+            generator.generate(renderer, outputDir);
             hasOutput = true;
         }
 
@@ -68,40 +71,7 @@ public class ApidocGeneratorAction implements Runnable {
                 logInfo("render is unset, using jwc");
             }
             ApiDocRenderer renderer = ApiDocGeneratorUtil.buildJsonWithCommentRenderer(jwc);
-            output(config, renderer, userCodeClassLoader);
-        }
-    }
-
-    private void output(
-            ApiDocParseConfig config, ApiDocRenderer renderer,
-            ClassLoader userCodeClassLoader) throws Exception {
-        logInfo("renderer: {}", renderer.getClass().getName());
-
-        ApiDocGenerator generator = new ApiDocGenerator(config, renderer, userCodeClassLoader);
-        String doc = generator.generate();
-
-        String outputPath = mojo.getOutputPath();
-        boolean rewrite = mojo.getRewrite();
-        if (outputPath == null) {
-            logWarn("only print doc since `outputPath` is unset");
-            logInfo("********** Generated Doc **********");
-            logInfo(doc); // print doc to console
-            logInfo("***********************************");
-            return;
-        }
-        File outputFile = new File(outputPath).getAbsoluteFile();
-        if (outputFile.exists() && !rewrite) {
-            log.error("output file already exists(set `rewrite = true` to confirm it): " + outputFile);
-            return;
-        }
-
-        try {
-            logInfo("writing to {}", outputFile);
-            FileUtil.write(outputFile, doc);
-            logInfo("done");
-        } catch (IOException e) {
-            log.error(StringUtil.formatMessage("error to write file {}, doc:\n {}",
-                    outputFile, doc), e);
+            generator.generate(renderer, outputDir);
         }
     }
 
@@ -109,8 +79,8 @@ public class ApidocGeneratorAction implements Runnable {
         log.info(StringUtil.formatMessage(msg, args));
     }
 
-    private void logWarn(String msg, Object... args) {
-        log.warn(StringUtil.formatMessage(msg, args));
+    private void logError(String msg, Object... args) {
+        log.error(StringUtil.formatMessage(msg, args));
     }
 
     private void logDebug(String msg, Object... args) {

@@ -44,12 +44,24 @@ public class MavenUtil {
         return basedir;
     }
 
-    public static List<File> getDependencies(
+    public static List<File> getAllDependencies(
             MavenProject project, ArtifactRepository localRepository) {
         String repoBaseDir = localRepository.getBasedir();
-        return project.getDependencies().stream()
-                .filter(dep -> "jar".equals(dep.getType()))
-                .map(dep -> new File(repoBaseDir, getPath(dep)))
+        return project.getArtifacts().stream()
+                .filter(artifact -> "jar".equals(artifact.getType()))
+                .map(artifact -> {
+                    if (artifact.getFile() == null) {
+                        String path = String.format("%s/%s/%s/%s-%s.jar",
+                                artifact.getGroupId().replace('.', '/'),
+                                artifact.getArtifactId(),
+                                artifact.getVersion(),
+                                artifact.getArtifactId(),
+                                artifact.getVersion());
+                        return new File(repoBaseDir, path);
+                    }
+                    return artifact.getFile();
+                })
+                .filter(File::exists)
                 .collect(Collectors.toList());
     }
 

@@ -12,7 +12,12 @@ import lombok.Data;
 @JsonInclude(Include.NON_NULL)
 public class SwaggerHeader {
 
+    private String description;
+
+    // 3.0
+    private SwaggerSchema schema;
+
+    // 2.0
     private SwaggerType type;
     private SwaggerFormat format;
-    private String description;
 }

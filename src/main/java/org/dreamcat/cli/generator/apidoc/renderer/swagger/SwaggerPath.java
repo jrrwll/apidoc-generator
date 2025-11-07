@@ -19,9 +19,22 @@ public class SwaggerPath {
     private String summary;
     private String description;
     private String operationId;
+
+    private List<SwaggerParameter> parameters;
+    private Map<String, SwaggerResponse> responses; // 401, 402, default
+    private Map<String, List<String>> security; // security def code
+
+    // 3.0
+    private SwaggerRequestBody requestBody;
+
+    // 2.0
     private List<String> consumes;
     private List<String> produces;
-    private List<SwaggerParameter> parameters;
-    private Map<String, SwaggerResponse> responses; // 401, 402
-    private Map<String, List<String>> security; // security def code
+
+    @Data
+    public static class SwaggerRequestBody {
+
+        private String description;
+        private Map<String, SwaggerContent> content; // application/json -> SwaggerContent
+    }
 }

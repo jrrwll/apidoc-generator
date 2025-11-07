@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.dreamcat.common.reflect.ObjectType;
 
 import java.util.List;
 
@@ -23,14 +24,14 @@ public class ApiParamField {
 
     @Setter(AccessLevel.NONE)
     @Getter(AccessLevel.NONE)
-    private transient Class<?> type;
+    private transient ObjectType type;
 
     @JsonIgnore
-    public Class<?> getType() {
+    public ObjectType getType() {
         return type;
     }
 
-    public void setType(Class<?> type) {
+    public void setType(ObjectType type) {
         this.type = type;
         this.typeName = type.getSimpleName();
     }

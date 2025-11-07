@@ -38,8 +38,12 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
 }
 
+
+var props = new Properties()
+rootProject.file('../../.env').withInputStream { props.load(it) }
+
 /*
-./gradlew classes
+./gradlecw classes
 ./gradlew apidocGenerate
  */
 apidocGenerate {
@@ -48,6 +52,16 @@ apidocGenerate {
     mergeInputParam = true
     swagger {
         enabled = true
+        // push doc to yapi
+        httpPush {
+            url = "${props.getProperty('yapi_url')}/api/open/import_data"
+            json = [
+                type: "swagger",
+                merge: "normal",
+                token: props.getProperty('yapi_project_token'),
+                json: "\$swaggerJsonEscaped"
+            ]
+        }
     }
     jsonWithComment {
         enabled = true
@@ -65,10 +79,10 @@ apidocGenerate {
     }
     fieldDoc {
         custom {
-            name = "com.example.annotation.FieldDoc"
+            annotationName = "com.example.annotation.FieldDoc"
         }
         springcloud {
-            pathMethod = ["yyy"]
+            nameMethod = ["yyy"]
         }
     }
 }

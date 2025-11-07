@@ -58,6 +58,7 @@ dependencies {
     implementation libs.bundles.javaparser
     implementation libs.freemarker
 
+    testImplementation libs.bundles.hc
     // https://mvnrepository.com/artifact/org.springframework/spring-web
     testImplementation 'org.springframework:spring-web:5.3.31'
     testImplementation 'javax.validation:validation-api:2.0.1.Final'

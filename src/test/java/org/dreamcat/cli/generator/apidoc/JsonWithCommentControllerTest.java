@@ -8,22 +8,20 @@ import org.junit.jupiter.api.Test;
  * @author Jerry Will
  * @version 2022-07-11
  */
-public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
-
-    String javaFileDir = srcDir + "/com/example/biz/controller";
+public class JsonWithCommentControllerTest extends BaseTest {
 
     @Test
     void test1() throws Exception {
-        ApiDocParseConfig config = createConfig(javaFileDir);
-        JsnoWithCommentRenderer renderer = createRenderer();
+        ApiDocParseConfig config = buildConfigForController();
+        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
         generate(config, renderer);
     }
 
     @Test
     void test2() throws Exception {
-        ApiDocParseConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = buildConfigForController();
 
-        JsnoWithCommentRenderer renderer = createRenderer();
+        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
         renderer.setPinFunctionComment(true);
         renderer.setSeqPrefix("3.2.");
         renderer.setInputParamTitle(null);
@@ -33,18 +31,18 @@ public class JsonWithCommentControllerTest extends JsonWithCommentBaseTest {
 
     @Test
     void testMergeInput() throws Exception {
-        ApiDocParseConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = buildConfigForController();
         config.setMergeInputParam(MergeInputParam.flatType());
 
-        JsnoWithCommentRenderer renderer = createRenderer();
+        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
         generate(config, renderer);
     }
 
     @Test
     void testOutputParamAsIndentedTable() throws Exception {
-        ApiDocParseConfig config = createConfig(javaFileDir);
+        ApiDocParseConfig config = buildConfigForController();
 
-        JsnoWithCommentRenderer renderer = createRenderer();
+        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
         renderer.setOutputParamAsIndentedTable(true);
         renderer.setFieldsNoRequired(true);
         generate(config, renderer);

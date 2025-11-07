@@ -50,6 +50,11 @@ class JavaParserUtil {
     }
 
     public static String getComment(Node node) {
-        return node.getComment().map(Comment::getContent).orElse("");
+        if (node.getComment().isPresent()) {
+            return node.getComment().get().getContent();
+        }
+        return node.getAllContainedComments().stream()
+                .map(Comment::getContent)
+                .collect(Collectors.joining("\n"));
     }
 }

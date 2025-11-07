@@ -1,5 +1,6 @@
 package org.dreamcat.cli.generator.apidoc;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -15,6 +16,12 @@ public class ApiDocGeneratorPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        if (!project.getPlugins().hasPlugin("java") &&
+                !project.getPlugins().hasPlugin("java-library")) {
+            throw new GradleException(
+                    "Plugin 'org.dreamcat.apidoc-generator' requires the 'java' or 'java-library' plugin to be applied first.");
+        }
+
         // Property<?> or getter/setter pojo
         project.getExtensions().create(name, ApiDocGeneratorExtension.class);
 

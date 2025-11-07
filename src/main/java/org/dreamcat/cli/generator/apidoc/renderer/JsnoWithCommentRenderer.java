@@ -4,24 +4,32 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiFunction;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiGroup;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiInputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiOutputParam;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
+import org.dreamcat.common.json.JsonUtil;
+import org.dreamcat.common.util.ClassLoaderUtil;
+import org.dreamcat.common.util.MapUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.StringUtil;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jerry Will
  * @version 2022-07-11
  */
+@Slf4j
 @Getter
 @Setter
 @Accessors(chain = true)
@@ -38,6 +46,7 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
     private String outputParamTitle = "**Output Param**";
     private boolean pinFunctionComment;
     private String seqPrefix;
+    private int seqOffset = 0;
     // indentedTable
     private int maxNestLevel = 4; // [0, 7]
     private String indentSpace = "&nbsp;&nbsp;";
@@ -50,8 +59,39 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
     private String requiredTrue = "Y";
     private String requiredFalse = "N";
 
+    @SneakyThrows
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static JsnoWithCommentRenderer fromI18n(String lang) {
+        Map<String, Object> i18n = JsonUtil.fromJsonObject(ClassLoaderUtil.getResourceAsString(
+                "org/dreamcat/cli/generator/apidoc/jwc_i18n.json"));
+        lang = lang.split("\\.")[0];
+        String lang1 = lang.split("_")[0];
+        if (lang1.equalsIgnoreCase("C") || lang1.equalsIgnoreCase("en")) {
+            return new JsnoWithCommentRenderer();
+        }
+
+        Map<String, Object> config = (Map) MapUtil.get(i18n, lang, lang1);
+        if (config == null) {
+            log.warn("unsupported lang for jwc: {}", lang);
+            return new JsnoWithCommentRenderer();
+        }
+        return JsonUtil.fromMap(config, JsnoWithCommentRenderer.class);
+    }
+
     @Override
-    public void render(ApiDoc doc, Writer out) throws IOException {
+    public String getOutputFileSuffix() {
+        return "md";
+    }
+
+    @Override
+    public String render(ApiDoc doc) throws IOException {
+        try (StringWriter out = new StringWriter()) {
+            render(doc, out);
+            return out.toString();
+        }
+    }
+
+    private void render(ApiDoc doc, Writer out) throws IOException {
         if (ObjectUtil.isNotBlank(doc.getName())) {
             out.write(nameHeader);
             out.write(" ");
@@ -69,7 +109,7 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
             }
             out.write("\n");
         }
-        int seq = 0;
+        int seq = seqOffset;
         List<ApiGroup> groups = doc.getGroups();
         for (int i = 0, m = groups.size(); i < m; i++) {
             List<ApiFunction> functions = groups.get(i).getFunctions();
@@ -115,8 +155,10 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
         }
         if (function.isInputParamsMerged()) {
             List<ApiParamField> fields = function.getInputParams().get(0).getFields();
-            rendererIndentedTable(fields, out);
-            out.write("\n");
+            if (ObjectUtil.isNotEmpty(fields)) {
+                rendererIndentedTable(fields, out);
+                out.write("\n");
+            }
         } else {
             for (ApiInputParam inputParam : function.getInputParams()) {
                 if (function.getInputParamCount() > 1) {

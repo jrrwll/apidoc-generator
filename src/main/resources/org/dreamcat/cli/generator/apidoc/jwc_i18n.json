@@ -1,0 +1,34 @@
+{
+  "zh_CN": {
+    "inputParamTitle": "**入参**",
+    "outputParamTitle": "**出参**",
+    "indentName": "名称",
+    "indentType": "数据类型",
+    "indentRequired": "是否必填",
+    "indentComment": "备注"
+  },
+  "zh_TW": {
+    "inputParamTitle": "**入參**",
+    "outputParamTitle": "**出參**",
+    "indentName": "名稱",
+    "indentType": "資料類型",
+    "indentRequired": "是否必填",
+    "indentComment": "備註"
+  },
+  "fr": {
+    "inputParamTitle": "**Paramètres d'entrée**",
+    "outputParamTitle": "**Paramètres de sortie**",
+    "indentName": "Nom",
+    "indentType": "Type",
+    "indentRequired": "Requis",
+    "indentComment": "Commentaire"
+  },
+  "es": {
+    "inputParamTitle": "**Parámetros de entrada**",
+    "outputParamTitle": "**Parámetros de salida**",
+    "indentName": "Nombre",
+    "indentType": "Tipo",
+    "indentRequired": "Requerido",
+    "indentComment": "Comentario"
+  }
+}

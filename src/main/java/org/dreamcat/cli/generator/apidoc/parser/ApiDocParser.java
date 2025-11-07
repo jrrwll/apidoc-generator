@@ -3,8 +3,11 @@ package org.dreamcat.cli.generator.apidoc.parser;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.ActionHttp;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FunctionDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.PathHttp;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.ServiceDoc;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentClassDef;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentJavaParser;
 import org.dreamcat.cli.generator.apidoc.javadoc.CommentMethodDef;
@@ -44,7 +47,7 @@ public class ApiDocParser extends BaseParser {
     final ApiParamParser apiParamParser;
 
     public ApiDocParser(ApiDocParseConfig config) {
-        this(config, (ClassLoader) null);
+        this(config, Thread.currentThread().getContextClassLoader());
     }
 
     public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader) {
@@ -52,7 +55,7 @@ public class ApiDocParser extends BaseParser {
     }
 
     public ApiDocParser(ApiDocParseConfig config, ObjectRandomGenerator randomGenerator) {
-        this(config, null, randomGenerator);
+        this(config, Thread.currentThread().getContextClassLoader(), randomGenerator);
     }
 
     public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader,
@@ -96,7 +99,7 @@ public class ApiDocParser extends BaseParser {
 
         Map<String, ApiGroup> groupMap = new LinkedHashMap<>();
         for (String javaFileDir : fileDirs) {
-            File dir = new File(javaFileDir);
+            File dir = new File(javaFileDir).getCanonicalFile();
             File[] files;
             if (dir.isFile()) {
                 files = new File[]{dir};
@@ -110,10 +113,14 @@ public class ApiDocParser extends BaseParser {
                     log.info("skip file {} since not a java file", file.getAbsolutePath());
                     continue;
                 }
-                List<CommentClassDef> classDefs = CommentClassDef.parse(file.getCanonicalPath(), srcDirs);
-                if (classDefs.size() != 1) {
+                List<CommentClassDef> classDefs = CommentClassDef.parse(file.getAbsolutePath(), srcDirs);
+                if (classDefs.isEmpty()) {
+                    log.warn("no class defined in {}", file.getAbsolutePath());
+                    continue;
+                }
+                else if (classDefs.size() > 1) {
                     throw new IllegalArgumentException(
-                            "support one class defined in one java file, but got " +
+                            "only support one class defined in one java file, but got " +
                                     classDefs.size() + " class in " + file.getAbsolutePath());
                 }
                 CommentClassDef classDef = classDefs.get(0);
@@ -130,13 +137,29 @@ public class ApiDocParser extends BaseParser {
 
         ApiGroup apiGroup = groupMap.computeIfAbsent(type, it -> new ApiGroup());
         apiGroup.setName(type);
-        apiGroup.setComment(classDef.getComment());
+        // comment
+        String comment = classDef.getComment();
+        if (ObjectUtil.isBlank(comment)) {
+            apiGroup.setName(type);
+        } else {
+            comment = comment.trim();
+            String[] split = comment.split("\n", 2);
+            if (split.length == 2) {
+                apiGroup.setName(split[0].trim());
+                apiGroup.setComment(split[1].trim());
+            } else {
+                apiGroup.setName(comment);
+            }
+        }
 
         for (CommentMethodDef methodDef : classDef.getMethods()) {
             ApiFunction apiFunction = parseMethod(methodDef, serviceType);
             if (apiFunction == null) continue;
 
             apiGroup.getFunctions().add(apiFunction);
+        }
+        if (ObjectUtil.isNotEmpty(config.getServiceDoc())) {
+            parseServiceDoc(serviceType, apiGroup);
         }
     }
 
@@ -148,6 +171,7 @@ public class ApiDocParser extends BaseParser {
             throw new RuntimeException("method " + methodName + " is not found in " + serviceType);
         }
         if (!Modifier.isPublic(method.getModifiers())) return null; // public only
+        if (config.ignoreFunctionName(methodName, serviceType.getName())) return null;
 
         ApiFunction apiFunction = new ApiFunction();
         apiFunction.setName(methodName);
@@ -184,9 +208,8 @@ public class ApiDocParser extends BaseParser {
     }
 
     private List<String> parseMethodPath(Method method, Class<?> serviceType) {
-        List<Http> http = config.getHttp();
-        Object pathAnn = findAndInvokeAnno(method, http, Http::getPath, Http::getPathMethod);
-        Object basePathAnn = findAndInvokeAnno(serviceType, http, Http::getPath, Http::getPathMethod);
+        Object pathAnn = findAndInvokeAnno(method, Http::getPaths, PathHttp::getPath, PathHttp::getPathMethod);;
+        Object basePathAnn = findAndInvokeAnno(serviceType, Http::getPaths, PathHttp::getPath, PathHttp::getPathMethod);;
 
         List<String> path = null, basePath = null;
         if (pathAnn != null) path = annoValueToStrs(pathAnn);
@@ -204,15 +227,14 @@ public class ApiDocParser extends BaseParser {
     }
 
     private List<String> parseMethodAction(Method method, Class<?> serviceType) {
-        List<Http> http = config.getHttp();
-        Object action = findAndInvokeAnno(method, http,
-                Http::getAction, Http::getActionMethod);
+        Object action = findAndInvokeAnno(method, Http::getActions,
+                ActionHttp::getAction, ActionHttp::getActionMethod);
         if (action != null) {
             return annoValueToStrs(action);
         }
 
-        Object baseAction = findAndInvokeAnno(serviceType, http,
-                Http::getAction, Http::getActionMethod);
+        Object baseAction = findAndInvokeAnno(serviceType, Http::getActions,
+                ActionHttp::getAction, ActionHttp::getActionMethod);
         if (baseAction == null) return null;
         return annoValueToStrs(baseAction);
     }
@@ -251,6 +273,25 @@ public class ApiDocParser extends BaseParser {
                 if (pair.hasSecond()) {
                     inputParam.setRequired(Objects.equals(pair.second(), true));
                 }
+            }
+        }
+    }
+
+    private void parseServiceDoc(Class<?> clazz, ApiGroup apiGroup) {
+        for (ServiceDoc serviceDoc : config.getServiceDoc()) {
+            Object annoObj = findAnno(clazz, serviceDoc.getName());
+            if (annoObj == null) continue;
+
+            // service name
+            Object name = invokeAnno(annoObj, serviceDoc.getNameMethod());
+            if (name != null) {
+                apiGroup.setName(name.toString());
+            }
+
+            // service comment
+            Object comment = invokeAnno(annoObj, serviceDoc.getCommentMethod());
+            if (comment != null) {
+                apiGroup.setComment(comment.toString());
             }
         }
     }

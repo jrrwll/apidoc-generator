@@ -7,6 +7,16 @@
 ```shell
 export GPG_PASSPHRASE=xxx
 mvn install -Dmaven.test.skip=true
+
+# or skip sign
+mvn install -Dmaven.test.skip=true -Dgpg.skip=true
+
+# install gpg before deploy
+brew install gnupg
+# or linux
+sudo apt-get install gnupg
+# or windows
+# https://www.gpg4win.org/
 ```
 
 ### usage

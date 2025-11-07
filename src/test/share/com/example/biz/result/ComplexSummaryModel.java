@@ -3,6 +3,8 @@ package com.example.biz.result;
 import lombok.Data;
 
 /**
+ * summary only
+ *
  * @author Jerry Will
  * @version 2021-12-17
  */

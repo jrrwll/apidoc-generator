@@ -1,8 +1,5 @@
 package org.dreamcat.cli.generator.apidoc.renderer;
 
-import java.io.Writer;
-import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -11,6 +8,9 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.dreamcat.cli.generator.apidoc.scheme.ApiDoc;
 import org.dreamcat.common.json.JsonUtil;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jerry Will
@@ -26,15 +26,16 @@ public class SimpleRenderer implements ApiDocRenderer {
     Map<String, Object> e;
 
     @Override
-    public void render(ApiDoc doc, Writer out) {
+    public String render(ApiDoc doc) {
         System.out.println("*** output of simple renderer plugin *** ");
-        System.out.println("this: " + JsonUtil.toJson(this));
+        System.out.println("this: " + JsonUtil.toJsonWithPretty(this));
         pushDoc(doc);
         System.out.println("******             end            ******");
+        return null;
     }
 
     /**
-     * Note: Oops!!! using {@link org.dreamcat.common.hc.httpclient.HttpClientWget} will cause
+     * Note: Oops!!! using {@link org.dreamcat.common.hc.httpclient.HttpClientHttpFetcher} will cause
      * {@link NoClassDefFoundError} on {@link org.apache.hc.client5.http.classic.methods.HttpUriRequest}
      * So we have to handle hc stuff manually
      *

@@ -58,6 +58,18 @@
           <verbose>true</verbose>
           <swagger>
             <enabled>true</enabled>
+            <!--
+            mvn apidoc-generator:apidocGenerate -Dyapi.url=http://your_yapi_site -Dyapi.project_token=xxx
+            -->
+            <httpPush>
+              <url>${yapi.url:-${env.YAPI_URL}}/api/open/import_data</url>
+              <json>
+                <type>swagger</type>
+                <merge>normal</merge>
+                <token>${yapi.project_token:-${env.YAPI_PROJECT_TOKEN}}</token>
+                <json>$swaggerJsonEscaped</json>
+              </json>
+            </httpPush>
           </swagger>
           <jsonWithComment>
             <enabled>true</enabled>

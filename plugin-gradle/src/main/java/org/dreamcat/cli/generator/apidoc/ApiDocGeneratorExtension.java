@@ -7,49 +7,42 @@ import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
-import java.util.Arrays;
-
 /**
  * @author Jerry Will
  * @version 2022-03-16
  */
 public abstract class ApiDocGeneratorExtension {
 
-    abstract Property<Boolean> getVerbose();
+    public abstract Property<Boolean> getVerbose();
 
-    abstract Property<String> getOutputPath();
+    public abstract Property<String> getOutputDir();
 
-    abstract Property<Boolean> getRewrite();
+    public abstract ListProperty<String> getBasePackages();
 
-    abstract ListProperty<String> getBasePackages();
+    public abstract ListProperty<String> getJavaFileDirs(); // required
 
-    abstract ListProperty<String> getJavaFileDirs(); // required
+    public abstract ListProperty<String> getIgnoreInputParamTypes();
 
-    abstract ListProperty<String> getIgnoreInputParamTypes();
+    public abstract ListProperty<String> getIgnoreParamNames();
 
-    abstract Property<Boolean> getMergeInputParam();
+    public abstract Property<Boolean> getMergeInputParam();
 
-    abstract Property<Boolean> getAutoDetect();
+    public abstract Property<Boolean> getAutoDetect();
 
     public ApiDocGeneratorExtension() {
-        getRewrite().convention(false);
-        getIgnoreInputParamTypes().convention(Arrays.asList(
-                "org.springframework.web.multipart.MultipartFile",
-                "[B"
-        ));
         getAutoDetect().convention(true);
     }
 
     /// nested
 
     @Nested
-    abstract JsonWithComment getJsonWithComment();
+    public abstract JsonWithComment getJsonWithComment();
 
     @Nested
-    abstract Swagger getSwagger();
+    public abstract Swagger getSwagger();
 
     @Nested
-    abstract RendererPlugin getRendererPlugin();
+    public abstract RendererPlugin getRendererPlugin();
 
     public void jsonWithComment(Action<? super JsonWithComment> action) {
         action.execute(getJsonWithComment());
@@ -63,124 +56,167 @@ public abstract class ApiDocGeneratorExtension {
         action.execute(getRendererPlugin());
     }
 
-    abstract NamedDomainObjectContainer<Http> getHttp();
+    public abstract NamedDomainObjectContainer<ServiceDoc> getServiceDoc();
 
-    abstract NamedDomainObjectContainer<FunctionDoc> getFunctionDoc();
+    public abstract NamedDomainObjectContainer<FunctionDoc> getFunctionDoc();
 
-    abstract NamedDomainObjectContainer<FieldDoc> getFieldDoc();
+    public abstract NamedDomainObjectContainer<FieldDoc> getFieldDoc();
+
+    public abstract Property<String> getExtraConfigJson();
 
     /// data class
 
     public abstract static class JsonWithComment {
 
-        abstract Property<Boolean> getEnabled();
+        public abstract Property<Boolean> getEnabled();
+
+        public abstract Property<Boolean> getI18n(); // use $LANG
+
+        public abstract Property<String> getLang();
 
         // template
-        abstract Property<String> getTemplate();
+        public abstract Property<String> getTemplate();
 
-        abstract MapProperty<String, String> getIncludeTemplates();
+        public abstract MapProperty<String, String> getIncludeTemplates();
 
         // jwc
-        abstract Property<Boolean> getFieldsNoRequired();
+        public abstract Property<Boolean> getFieldsNoRequired();
 
-        abstract Property<Boolean> getOutputParamAsIndentedTable();
+        public abstract Property<Boolean> getOutputParamAsIndentedTable();
 
-        abstract Property<String> getNameHeader();
+        public abstract Property<String> getNameHeader();
 
-        abstract Property<String> getFunctionHeader();
+        public abstract Property<String> getFunctionHeader();
 
-        abstract Property<String> getInputParamTitle();
+        public abstract Property<String> getInputParamTitle();
 
-        abstract Property<String> getOutputParamTitle();
+        public abstract Property<String> getOutputParamTitle();
 
-        abstract Property<Boolean> getPinFunctionComment();
+        public abstract Property<Boolean> getPinFunctionComment();
 
-        abstract Property<String> getSeqPrefix();
+        public abstract Property<String> getSeqPrefix();
 
-        abstract Property<Integer> getMaxNestLevel();
+        public abstract Property<Integer> getSeqOffset();
 
-        abstract Property<String> getIndentSpace();
+        public abstract Property<Integer> getMaxNestLevel();
 
-        abstract Property<String> getIndentPrefix();
+        public abstract Property<String> getIndentSpace();
 
-        abstract Property<String> getIndentName();
+        public abstract Property<String> getIndentPrefix();
 
-        abstract Property<String> getIndentType();
+        public abstract Property<String> getIndentName();
 
-        abstract Property<String> getIndentRequired();
+        public abstract Property<String> getIndentType();
 
-        abstract Property<String> getRequiredTrue();
+        public abstract Property<String> getIndentRequired();
 
-        abstract Property<String> getRequiredFalse();
+        public abstract Property<String> getRequiredTrue();
 
-        abstract Property<String> getRequiredNull();
+        public abstract Property<String> getRequiredFalse();
+
+        public abstract Property<String> getRequiredNull();
     }
 
     public abstract static class Swagger {
 
-        abstract Property<Boolean> getEnabled();
+        public abstract Property<Boolean> getEnabled();
 
-        abstract Property<String> getDefaultTitle();
+        public abstract Property<Boolean> getSwagger2();
 
-        abstract Property<String> getDefaultVersion();
+        public abstract Property<String> getDefaultTitle();
+
+        public abstract Property<String> getDefaultVersion();
+
+        public abstract Property<Boolean> getFormatAsJson();
+
+        @Nested
+        public abstract HttpPush getHttpPush();
+
+        public void httpPush(Action<? super HttpPush> action) {
+            action.execute(getHttpPush());
+        }
     }
 
     public abstract static class RendererPlugin {
 
-        abstract Property<String> getPath();
+        public abstract Property<String> getPath();
 
         //  support to inject env vars to string value
-        abstract MapProperty<String, Object> getInjectedArgs();
+        public abstract MapProperty<String, Object> getInjectedArgs();
     }
 
-    public interface Http {
+    public abstract static class Http {
 
-        String getName(); // for NamedDomainObjectContainer
+        public abstract String getName(); // NamedDomainObjectContainer need it
 
-        Property<String> getPath();
+        public abstract Property<String> getPath();
 
-        ListProperty<String> getPathMethod();
+        public abstract ListProperty<String> getPathMethod();
 
-        Property<String> getAction();
+        public abstract Property<String> getAction();
 
-        ListProperty<String> getActionMethod();
+        public abstract ListProperty<String> getActionMethod();
 
-        Property<String> getPathVar();
+        public abstract Property<String> getPathVar();
 
-        ListProperty<String> getPathVarMethod();
+        public abstract ListProperty<String> getPathVarMethod();
 
-        Property<String> getRequired();
+        public abstract Property<String> getRequired();
 
-        ListProperty<String> getRequiredMethod();
+        public abstract ListProperty<String> getRequiredMethod();
     }
 
-    public interface FunctionDoc {
+    public abstract static class ServiceDoc {
 
-        String getName();
+        public abstract String getName(); // NamedDomainObjectContainer need it
 
-        Property<String> getAnnotationName();
+        public abstract Property<String> getAnnotationName();
 
-        ListProperty<String> getCommentMethod();
+        public abstract ListProperty<String> getNameMethod();
 
-        ListProperty<String> getNestedParamMethod();
-
-        ListProperty<String> getNestedParamNameMethod();
-
-        ListProperty<String> getNestedParamCommentMethod();
-
-        ListProperty<String> getNestedParamRequiredMethod();
+        public abstract ListProperty<String> getCommentMethod();
     }
 
-    public interface FieldDoc {
+    public abstract static class FunctionDoc {
 
-        String getName();
+        public abstract String getName(); // NamedDomainObjectContainer need it
 
-        Property<String> getAnnotationName();
+        public abstract Property<String> getAnnotationName();
 
-        ListProperty<String> getNameMethod();
+        public abstract ListProperty<String> getCommentMethod();
 
-        ListProperty<String> getCommentMethod();
+        public abstract ListProperty<String> getNestedParamMethod();
 
-        ListProperty<String> getRequiredMethod();
+        public abstract ListProperty<String> getNestedParamNameMethod();
+
+        public abstract ListProperty<String> getNestedParamCommentMethod();
+
+        public abstract ListProperty<String> getNestedParamRequiredMethod();
+    }
+
+    public abstract static class FieldDoc {
+
+        public abstract String getName(); // NamedDomainObjectContainer need it
+
+        public abstract Property<String> getAnnotationName();
+
+        public abstract ListProperty<String> getNameMethod();
+
+        public abstract ListProperty<String> getCommentMethod();
+
+        public abstract ListProperty<String> getRequiredMethod();
+    }
+
+    public abstract static class HttpPush {
+
+        public abstract Property<String> getUrl();
+
+        public abstract MapProperty<String, String> getHeaders();
+
+        public abstract MapProperty<String, Object> getJson();
+
+        public abstract Property<String> getText();
+
+        public abstract MapProperty<String, String> getForm();
     }
 }

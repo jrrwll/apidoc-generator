@@ -2,6 +2,8 @@ apply plugin: 'java-gradle-plugin'
 
 dependencies {
     implementation gradleApi()
+    implementation libs.jackson.databind
+    implementation libs.bundles.hc
 
     implementation 'org.dreamcat:apidoc-generator:0.4-SNAPSHOT'
 }

@@ -9,7 +9,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @author Jerry Will
@@ -73,7 +72,9 @@ public class CommentJavaParser {
                 if (file.exists()) {
                     return CommentClassDef.parseOne(file, srcDirs, className);
                 }
-                current = current.substring(0, current.lastIndexOf('.'));
+                int lastDot = current.lastIndexOf('.');
+                if (lastDot == -1) break;
+                current = current.substring(0, lastDot);
             }
         }
         return null;

@@ -42,7 +42,7 @@ public class CommentClassDef {
                 .collect(Collectors.toList());
 
         this.methods = declaration.getMethods().stream()
-                .filter(it -> !it.isStatic()) // no-static
+                .filter(it -> !it.isStatic() && it.isPublic()) // no-static
                 .map(CommentMethodDef::new)
                 .collect(Collectors.toList());
     }

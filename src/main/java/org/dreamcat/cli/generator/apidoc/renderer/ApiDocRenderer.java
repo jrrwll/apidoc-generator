@@ -6,12 +6,8 @@ import org.dreamcat.common.util.ClassLoaderUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.rmi.RemoteException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,40 +16,36 @@ import java.util.Map;
  */
 public interface ApiDocRenderer {
 
-    void render(ApiDoc doc, Writer out) throws IOException;
+    String render(ApiDoc doc) throws IOException;
 
-    default void render(ApiDoc doc, File outputFile) throws IOException {
-        try (FileWriter out = new FileWriter(outputFile)) {
-            render(doc, out);
-        }
+    default String getOutputFileSuffix() {
+        return null;
     }
 
-    default String render(ApiDoc doc) {
-        try (StringWriter out = new StringWriter()) {
-            render(doc, out);
-            return out.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    static ApiDocRenderer loadFromPath(Map<String, Object> injectedArgs, String path) throws Exception {
+        return loadFromPath(injectedArgs, path, Thread.currentThread().getContextClassLoader());
     }
 
-    static ApiDocRenderer loadFromPath(String path,
-            Map<String, Object> injectedArgs) throws Exception {
-        return loadFromPath(path, injectedArgs,
-                Thread.currentThread().getContextClassLoader());
+    static ApiDocRenderer loadFromPath(Map<String, Object> injectedArgs, String path, ClassLoader parent) throws Exception {
+        return loadFromPath(null, injectedArgs, path, parent);
     }
 
     @SuppressWarnings("unchecked")
-    static ApiDocRenderer loadFromPath(String path,
-            Map<String, Object> injectedArgs, ClassLoader classLoader) throws Exception {
-        ClassLoader cl = ClassLoaderUtil.fromDir(path, classLoader);
+    static ApiDocRenderer loadFromPath(String className, Map<String, Object> injectedArgs, String path, ClassLoader parent) throws Exception {
+        ClassLoader cl = ClassLoaderUtil.fromDir(path, parent);
 
-        String className = ClassLoaderUtil.getServicesName(ApiDocRenderer.class.getName(), cl);
-        if (className == null) {
-            throw new RemoteException("SPI " + ApiDocRenderer.class.getName() +
+        List<String> classNames = ClassLoaderUtil.getServicesNames(ApiDocRenderer.class.getName(), cl);
+        if (ObjectUtil.isEmpty(classNames)) {
+            throw new IllegalArgumentException("SPI " + ApiDocRenderer.class.getName() +
                     " is not found in path: " + path);
         }
-
+        if (className == null) {
+            className = classNames.get(0);
+        } else {
+            if (!classNames.contains(className)) {
+                throw new IllegalArgumentException("SPI " + className + " is not found in path: " + path);
+            }
+        }
         Class<ApiDocRenderer> rendererClass = (Class<ApiDocRenderer>) cl.loadClass(className);
         if (ObjectUtil.isNotEmpty(injectedArgs)) {
             return JsonUtil.fromMap(injectedArgs, rendererClass);

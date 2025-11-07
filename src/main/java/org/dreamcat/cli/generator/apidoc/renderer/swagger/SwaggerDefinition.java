@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import org.dreamcat.cli.generator.apidoc.scheme.ApiParamField;
 import org.dreamcat.common.reflect.ObjectField;
 import org.dreamcat.common.reflect.ObjectType;
+import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
 import java.lang.reflect.Field;
@@ -13,7 +15,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -29,8 +30,9 @@ public class SwaggerDefinition {
     private String description;
     private Map<String, SwaggerDefinition> properties;
     private SwaggerDefinition items;
+    // 3.0 -> #/components/schemas/some_def
     @JsonProperty("$ref")
-    private String ref; // #/definitions/some_def
+    private String ref; // 2.0 -> #/definitions/some_def
 
     private Boolean wrapped;
     @JsonProperty("default")
@@ -40,7 +42,7 @@ public class SwaggerDefinition {
     private List<String> _enum;
 
     public static SwaggerDefinition parse(
-            ObjectType type, Swagger swagger, Function<Field, String> fieldNameGetter) {
+            ObjectType type, String comment, List<ApiParamField> paramFields, Swagger swagger) {
         if (type == null) return null;
 
         SwaggerDefinition definition = new SwaggerDefinition();
@@ -55,6 +57,7 @@ public class SwaggerDefinition {
 
         definition.setType(swaggerType);
         definition.setFormat(SwaggerFormat.parse(clazz));
+        definition.setDescription(comment);
 
         if (clazz.isEnum()) {
             List<String> consts = Arrays.stream(clazz.getEnumConstants())
@@ -66,9 +69,9 @@ public class SwaggerDefinition {
         if (swaggerType.equals(SwaggerType.array)) {
             SwaggerDefinition items;
             if (type.isArray()) {
-                items = parse(type.getComponentType(), swagger, fieldNameGetter); // T[]
+                items = parse(type.getComponentType(), null, paramFields, swagger); // T[]
             } else {
-                items = parse(type.getParameterType(0), swagger, fieldNameGetter); // Collection<T>
+                items = parse(type.getParameterType(0), null, paramFields, swagger); // Collection<T>
             }
             definition.setItems(items);
         } else if (swaggerType.equals(SwaggerType.object) &&
@@ -79,11 +82,23 @@ public class SwaggerDefinition {
                 for (ObjectField objectField : fields.values()) {
                     Field field = objectField.getField();
                     String fieldName = field.getName();
-                    if (fieldNameGetter != null) {
-                        fieldName = fieldNameGetter.apply(field);
+
+                    ApiParamField paramField = null;
+                    if (ObjectUtil.isNotEmpty(paramFields)) {
+                        paramField = paramFields.stream()
+                                .filter(it -> it.getName().equals(field.getName()))
+                                .findAny().orElse(null);
+                    }
+                    List<ApiParamField> subParamFields = null;
+                    String subComment = null;
+                    if (paramField != null) {
+                        fieldName = paramField.getName();
+                        subParamFields = paramField.getFields();
+                        subComment = paramField.getComment();
                     }
 
-                    SwaggerDefinition fieldDefinition = parse(objectField.getType(), swagger, fieldNameGetter);
+                    SwaggerDefinition fieldDefinition = parse(objectField.getType(),
+                            subComment, subParamFields, swagger);
                     properties.put(fieldName, fieldDefinition);
                 }
                 definition.setProperties(properties);

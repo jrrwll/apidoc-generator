@@ -22,7 +22,7 @@ public class ThriftGen {
         File dir = Files.createTempDirectory("thrift-gen").toFile();
         log.info("dir: {}", dir);
         try {
-            ShellUtil.exec(true, thriftPath, "-gen", "json",
+            ShellUtil.exec(thriftPath, "-gen", "json",
                     "-out", dir.getAbsolutePath(), thriftFile);
             File outputFile = new File(dir, FileUtil.prefix(thriftFile) + ".json");
             return JsonUtil.fromJson(outputFile, ThriftDef.class);

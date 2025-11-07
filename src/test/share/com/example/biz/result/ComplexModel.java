@@ -22,6 +22,7 @@ public class ComplexModel extends CommonModel {
      * the people who admire the number
      */
     private List<User> admired;
+    private User[] users;
 
     @Data
     public static class User {

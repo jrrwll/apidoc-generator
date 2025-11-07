@@ -17,7 +17,9 @@ public class SwaggerParameter {
     private String description;
     private Boolean required;
     private SwaggerSchema schema;
+    private SwaggerDefinition items; // need by array
 
+    // 2.0
     private SwaggerType type;
     private SwaggerFormat format;
     private Double maximum;
@@ -26,8 +28,9 @@ public class SwaggerParameter {
     public enum In {
         path,
         query,
-        body,
-        formData,
         header,
+        // 3.0
+        formData,
+        body,
     }
 }

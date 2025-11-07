@@ -2,12 +2,14 @@ package org.dreamcat.cli.generator.apidoc;
 
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 
@@ -19,8 +21,9 @@ import java.util.Map;
  * @version 2022-03-16
  */
 @Getter
+@Setter
 // @Execute()
-@Mojo(name = "apidocGenerate")
+@Mojo(name = "apidocGenerate", requiresDependencyResolution = ResolutionScope.COMPILE)
 public class ApidocGeneratorMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true)
@@ -33,15 +36,15 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     @Parameter(defaultValue = "false")
     private Boolean verbose;
     @Parameter
-    private String outputPath;
-    @Parameter(defaultValue = "false")
-    private Boolean rewrite;
+    private String outputDir;
     @Parameter
     private List<String> basePackages;
     @Parameter(required = true)
     private List<String> javaFileDirs;
     @Parameter
     private List<String> ignoreInputParamTypes;
+    @Parameter
+    private List<String> ignoreParamNames;
     @Parameter(defaultValue = "false")
     private Boolean mergeInputParam;
     @Parameter(defaultValue = "true")
@@ -55,11 +58,14 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     private RendererPlugin rendererPlugin;
 
     @Parameter
-    private List<Http> httpList;
+    private List<ServiceDoc> serviceDocList;
     @Parameter
     private List<FunctionDoc> functionDocList;
     @Parameter
     private List<FieldDoc> fieldDocList;
+
+    @Parameter
+    private String extraConfigJson;
 
     public void execute() throws MojoExecutionException {
         new ApidocGeneratorAction(this).run();
@@ -70,6 +76,10 @@ public class ApidocGeneratorMojo extends AbstractMojo {
 
         @Parameter(defaultValue = "false")
         private Boolean enabled;
+        @Parameter(defaultValue = "false")
+        private Boolean i18n;
+        @Parameter
+        private String lang;
         @Parameter
         private String template;
         @Parameter
@@ -90,6 +100,8 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         private Boolean pinFunctionComment;
         @Parameter
         private String seqPrefix;
+        @Parameter
+        private Integer seqOffset;
 
         @Parameter
         private Integer maxNestLevel;
@@ -116,10 +128,15 @@ public class ApidocGeneratorMojo extends AbstractMojo {
 
         @Parameter(defaultValue = "false")
         private Boolean enabled;
+        @Parameter(defaultValue = "false")
+        private Boolean swagger2;
         @Parameter
         private String defaultTitle;
         @Parameter
         private String defaultVersion;
+
+        @Parameter
+        private HttpPush httpPush;
     }
 
     @Data
@@ -133,24 +150,14 @@ public class ApidocGeneratorMojo extends AbstractMojo {
     }
 
     @Data
-    public static class Http {
+    public static class ServiceDoc {
 
         @Parameter
-        private String path;
+        private String annotationName;
         @Parameter
-        private List<String> pathMethod;
+        private List<String> nameMethod;
         @Parameter
-        private String action;
-        @Parameter
-        private List<String> actionMethod;
-        @Parameter
-        private String pathVar;
-        @Parameter
-        private List<String> pathVarMethod;
-        @Parameter
-        private String required;
-        @Parameter
-        private List<String> requiredMethod;
+        private List<String> commentMethod;
     }
 
     @Data
@@ -181,5 +188,23 @@ public class ApidocGeneratorMojo extends AbstractMojo {
         private List<String> commentMethod;
         @Parameter
         private List<String> requiredMethod;
+    }
+
+    @Data
+    public static class HttpPush {
+        @Parameter
+        private String url;
+
+        @Parameter
+        private Map<String, String> headers;
+
+        @Parameter
+        private Map<String, Object> json;
+
+        @Parameter
+        private String text;
+
+        @Parameter
+        private Map<String, String> form;
     }
 }

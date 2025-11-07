@@ -45,37 +45,32 @@ public class GradleUtil {
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
-    public static URLClassLoader buildUserCodeClassLoader(Project project) {
-        URL[] urls = getUserCodeClassPaths(project);
+    public static URLClassLoader buildUserCodeClassLoader(
+            JavaPluginExtension extension, Configuration compileConfiguration) {
+        URL[] urls = Stream.of(getClassDirs(extension),
+                        compileConfiguration.getFiles())
+                .flatMap(Collection::stream).map(UrlUtil::toURL).toArray(URL[]::new);
         return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
 
-    public static URL[] getUserCodeClassPaths(Project project) {
-        return Stream.of(getClassDirs(project),
-                        getCompileClasspath(project))
-                .flatMap(Collection::stream).map(UrlUtil::toURL).toArray(URL[]::new);
-    }
-
-    public static Set<File> getCompileClasspath(Project project) {
-        Configuration compileConfiguration = project.getConfigurations()
+    public static Configuration getCompileClasspath(Project project) {
+        return project.getConfigurations()
                 .getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME);
-        return compileConfiguration.getFiles();
     }
 
-    public static Set<File> getRuntimeClasspath(Project project) {
-        Configuration compileConfiguration = project.getConfigurations()
+    public static Configuration getRuntimeClasspath(Project project) {
+        return project.getConfigurations()
                 .getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME);
-        return compileConfiguration.getFiles();
     }
 
-    public static Set<File> getClassDirs(Project project) {
-        SourceSetContainer container = project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets();
+    public static Set<File> getClassDirs(JavaPluginExtension extension) {
+        SourceSetContainer container = extension.getSourceSets();
         FileCollection classesDirs = container.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput().getClassesDirs();
         return classesDirs.getFiles();
     }
 
-    public static Set<File> getSrcDirs(Project project) {
-        SourceSetContainer container = project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets();
+    public static Set<File> getSrcDirs(JavaPluginExtension extension) {
+        SourceSetContainer container = extension.getSourceSets();
         return container.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getAllJava().getSrcDirs();
     }
 

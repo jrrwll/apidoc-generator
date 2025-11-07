@@ -2,6 +2,7 @@ package org.dreamcat.cli.generator.apidoc.parser;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig;
+import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Http;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.Validation;
 import org.dreamcat.common.util.AssertUtil;
 import org.dreamcat.common.util.FunctionUtil;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +34,7 @@ class BaseParser {
 
     BaseParser(ApiDocParseConfig config, ClassLoader classLoader) {
         AssertUtil.requireNotNull(config, "config");
-        if (classLoader == null) classLoader = Thread.currentThread().getContextClassLoader();
-
+        AssertUtil.requireNotNull(classLoader, "classLoader");
         this.config = config;
         this.classLoader = classLoader;
     }
@@ -51,25 +52,42 @@ class BaseParser {
         return null;
     }
 
-    <T> Object findAndInvokeAnno(AnnotatedElement element, List<T> configObjs,
+    <T> Object findAndInvokeAnno(AnnotatedElement element, Function<Http, List<T>> configs,
             Function<T, String> anno, Function<T, List<String>> methods) {
-        if (ObjectUtil.isEmpty(configObjs)) return null;
-        for (T configObj : configObjs) {
-            String annoName = anno.apply(configObj);
-            if (ObjectUtil.isEmpty(annoName)) continue;
-            List<String> methodNames = methods.apply(configObj);
-            if (ObjectUtil.isEmpty(methodNames)) continue;
+        List<Http> http = config.getHttp();
+        if (ObjectUtil.isEmpty(http)) return null;
+        for (Http httpObj : http) {
+            List<T> configObjs = configs.apply(httpObj);
+            if (ObjectUtil.isEmpty(configObjs)) continue;
+            for (T configObj : configObjs) {
+                String annoName = anno.apply(configObj);
+                if (ObjectUtil.isEmpty(annoName)) continue;
 
-            Object value = findAndInvokeAnno(element, annoName, methodNames);
-            if (value != null) return value;
+                if (configObj instanceof Supplier) {
+                    Object literal = ((Supplier<?>)configObj).get();
+                    if (literal == null) continue;
+                    Object value = findAndInvokeAnno(element, annoName, null, literal);
+                    if (value != null) return value;
+                    else continue;
+                }
+
+                List<String> methodNames = methods.apply(configObj);
+                if (ObjectUtil.isEmpty(methodNames)) continue;
+
+                Object value = findAndInvokeAnno(element, annoName, methodNames, null);
+                if (value != null) return value;
+            }
         }
         return null;
     }
 
-    Object findAndInvokeAnno(AnnotatedElement element, String anno, List<String> methods) {
+    Object findAndInvokeAnno(AnnotatedElement element, String anno, List<String> methods,
+            Object literal) {
         if (ObjectUtil.isEmpty(methods)) return null;
         Annotation annoObj = findAnno(element, anno);
         if (annoObj == null) return null;
+
+        if (literal != null) return literal;
         return invokeAnno(annoObj, methods);
     }
 

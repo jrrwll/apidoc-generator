@@ -4,6 +4,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.plugins.JavaPlugin;
 
 /**
  * @author Jerry Will
@@ -21,6 +22,7 @@ public class ApiDocGeneratorPlugin implements Plugin<Project> {
             throw new GradleException(
                     "Plugin 'org.dreamcat.apidoc-generator' requires the 'java' or 'java-library' plugin to be applied first.");
         }
+        // project.getPluginManager().apply("java");
 
         // Property<?> or getter/setter pojo
         project.getExtensions().create(name, ApiDocGeneratorExtension.class);
@@ -28,5 +30,7 @@ public class ApiDocGeneratorPlugin implements Plugin<Project> {
         // project.getTasks().create(name, ApiDocGeneratorTask.class, project, extension);
         Task task = project.getTasks().create(name, ApiDocGeneratorTask.class);
         task.setGroup(taskGroup);
+
+        task.dependsOn(project.getTasks().named(JavaPlugin.CLASSES_TASK_NAME));
     }
 }

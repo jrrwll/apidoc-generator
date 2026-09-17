@@ -60,7 +60,10 @@ public class HttpPushConfig {
             Map<String, String> formatted_form = form.entrySet().stream().collect(Collectors.toMap(Entry::getKey,
                     entry -> InterpolationUtil.format(entry.getValue(), context)));
             if (log.isDebugEnabled()) {
-                log.debug("push doc to {} with form:\n{}", formatted_url, JsonUtil.toJson(formatted_form));
+                String formatted_form_str = formatted_form.entrySet().stream()
+                        .map(e -> "    --data-urlencode " + e.getKey() + "=" + e.getValue())
+                        .collect(Collectors.joining("\n"));
+                log.debug("push doc to {} with form:\n{}", formatted_url, formatted_form_str);
             }
             resp = HttpClientUtil.postForm(formatted_url, headers, formatted_form);
         } else {

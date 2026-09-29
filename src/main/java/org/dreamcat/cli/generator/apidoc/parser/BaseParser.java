@@ -83,7 +83,6 @@ class BaseParser {
 
     Object findAndInvokeAnno(AnnotatedElement element, String anno, List<String> methods,
             Object literal) {
-        if (ObjectUtil.isEmpty(methods)) return null;
         Annotation annoObj = findAnno(element, anno);
         if (annoObj == null) return null;
 

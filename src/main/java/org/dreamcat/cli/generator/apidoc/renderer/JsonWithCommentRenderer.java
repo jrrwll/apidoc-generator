@@ -34,7 +34,7 @@ import java.util.Map;
 @Setter
 @Accessors(chain = true)
 @JsonInclude(Include.NON_EMPTY)
-public class JsnoWithCommentRenderer implements ApiDocRenderer {
+public class JsonWithCommentRenderer implements ApiDocRenderer {
 
     // output style
     boolean fieldsNoRequired;
@@ -61,21 +61,21 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
 
     @SneakyThrows
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static JsnoWithCommentRenderer fromI18n(String lang) {
+    public static JsonWithCommentRenderer fromI18n(String lang) {
         Map<String, Object> i18n = JsonUtil.fromJsonObject(ClassLoaderUtil.getResourceAsString(
                 "org/dreamcat/cli/generator/apidoc/jwc_i18n.json"));
         lang = lang.split("\\.")[0];
         String lang1 = lang.split("_")[0];
         if (lang1.equalsIgnoreCase("C") || lang1.equalsIgnoreCase("en")) {
-            return new JsnoWithCommentRenderer();
+            return new JsonWithCommentRenderer();
         }
 
         Map<String, Object> config = (Map) MapUtil.get(i18n, lang, lang1);
         if (config == null) {
             log.warn("unsupported lang for jwc: {}", lang);
-            return new JsnoWithCommentRenderer();
+            return new JsonWithCommentRenderer();
         }
-        return JsonUtil.fromMap(config, JsnoWithCommentRenderer.class);
+        return JsonUtil.fromMap(config, JsonWithCommentRenderer.class);
     }
 
     @Override
@@ -136,6 +136,11 @@ public class JsnoWithCommentRenderer implements ApiDocRenderer {
             out.write(function.getName());
         }
 
+        if (ObjectUtil.isNotEmpty(function.getAction())) {
+            out.write(" **");
+            out.write(String.join("** **", function.getAction()));
+            out.write("**");
+        }
         if (ObjectUtil.isNotEmpty(function.getPath())) {
             out.write(" `");
             out.write(String.join("`, `", function.getPath()));

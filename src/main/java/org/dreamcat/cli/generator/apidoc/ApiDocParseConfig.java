@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 import org.dreamcat.common.reflect.ObjectField;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.util.AssertUtil;
+import org.dreamcat.common.util.ListUtil;
 import org.dreamcat.common.util.ObjectUtil;
 import org.dreamcat.common.util.ReflectUtil;
 
@@ -44,7 +45,7 @@ public class ApiDocParseConfig {
 
     // parser
     private boolean verbose;
-    private List<String> basePackages = Collections.singletonList(""); // java files dirs
+    private List<String> basePackages; // java files dirs
     private List<String> srcDirs; // source dir
     // service class dir/file, /a/b/c for absolute path and a/b/c for relative path
     private List<String> javaFileDirs;
@@ -54,9 +55,8 @@ public class ApiDocParseConfig {
     private Set<String> ignoreFunctionNames; // ignore method names, e.g. "a.b.Box#method1,method2"
 
     // annotation
-    private boolean autoDetect; // auto detect classpath and setup annotation config
     private List<Http> http; // http annotations
-    private List<Validation> validation; // auto detect javax-validation
+    private List<Validation> validation; // javax-validation
     // other annotations
     private List<ServiceDoc> serviceDoc; // annotation for class
     private List<FunctionDoc> functionDoc; // annotation for method
@@ -77,34 +77,61 @@ public class ApiDocParseConfig {
 
     // ==== ==== ==== ====    ==== ==== ==== ====    ==== ==== ==== ====
 
-    public void afterPropertySet(ClassLoader classLoader) {
-        AssertUtil.requireNotEmpty(basePackages, "basePackages");
+    public static ApiDocParseConfig fromAutoDetect() {
+        return fromAutoDetect(Thread.currentThread().getContextClassLoader());
+    }
+
+    // auto detect classpath and setup annotation config
+    public static ApiDocParseConfig fromAutoDetect(ClassLoader classLoader) {
+        ApiDocParseConfig config = new ApiDocParseConfig();
+        config.setIgnoreInputParamTypes(new HashSet<>(Arrays.asList(
+                "[B",
+                "javax.servlet.http.HttpServletRequest",
+                "javax.servlet.http.HttpServletResponse",
+                "javax.servlet.http.Cookie",
+                "org.springframework.web.multipart.MultipartFile"
+        )));
+        // springWeb
+        if (ReflectUtil.forNameOrNull(REQUEST_MAPPING, classLoader) != null) {
+            config.setHttp(new ArrayList<>(Collections.singleton(springWeb())));
+        }
+        if (ReflectUtil.forNameOrNull(NOT_NULL, classLoader) != null) {
+            config.setValidation(new ArrayList<>(Collections.singleton(javaxValidation())));
+        }
+        // jackson
+        if (ReflectUtil.forNameOrNull(JACKSON_PROPERTY, classLoader) != null) {
+            config.setFieldDoc(new ArrayList<>(Collections.singleton(jacksonFieldDoc())));
+        }
+        return config;
+    }
+
+    public void mergeAnnotationConfig(ApiDocParseConfig other) {
+        this.verbose = other.verbose;
+        if (other.http != null) {
+            this.http = ListUtil.concat(this.http, other.http);
+        }
+        if (other.validation != null) {
+            this.validation = ListUtil.concat(this.validation, other.validation);
+        }
+        if (other.serviceDoc != null) {
+            this.serviceDoc = ListUtil.concat(this.serviceDoc, other.serviceDoc);
+        }
+        if (other.functionDoc != null) {
+            this.functionDoc = ListUtil.concat(this.functionDoc, other.functionDoc);
+        }
+        if (other.fieldDoc != null) {
+            this.fieldDoc = ListUtil.concat(this.fieldDoc, other.fieldDoc);
+        }
+    }
+
+    public void validate() {
+        if (basePackages == null) {
+            basePackages = Collections.singletonList("");
+        } else {
+            AssertUtil.requireNotEmpty(basePackages, "basePackages");
+        }
         AssertUtil.requireNotEmpty(srcDirs, "srcDirs");
         AssertUtil.requireNotEmpty(javaFileDirs, "javaFileDirs");
-
-        // auto detect
-        if (!autoDetect) return;
-
-        if(ObjectUtil.isEmpty(ignoreInputParamTypes)) {
-            ignoreInputParamTypes = new HashSet<>(Arrays.asList(
-                    "[B",
-                    "javax.servlet.http.HttpServletRequest",
-                    "javax.servlet.http.HttpServletResponse",
-                    "javax.servlet.http.Cookie",
-                    "org.springframework.web.multipart.MultipartFile"
-            ));
-        }
-
-        // springWeb
-        if (ObjectUtil.isEmpty(http) && ReflectUtil.forNameOrNull(REQUEST_MAPPING, classLoader) != null) {
-            this.http = new ArrayList<>(Collections.singleton(springWeb()));
-        }
-        if (ObjectUtil.isEmpty(validation) && ReflectUtil.forNameOrNull(NOT_NULL, classLoader) != null) {
-            this.validation = new ArrayList<>(Collections.singleton(javaxValidation()));
-        }
-        if (ObjectUtil.isEmpty(fieldDoc) && ReflectUtil.forNameOrNull(JACKSON_PROPERTY, classLoader) != null) {
-            this.fieldDoc = new ArrayList<>(Collections.singleton(jacksonFieldDoc()));
-        }
     }
 
     public boolean ignoreInputParamType(ObjectParameter parameter) {

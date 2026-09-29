@@ -47,7 +47,7 @@ public class ApiDocGeneratorTask extends DefaultTask {
 
         List<String> srcDirs = GradleUtil.getSrcDirs(javaPluginExtension).stream()
                 .map(File::getPath).collect(Collectors.toList());
-        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(extension, srcDirs);
+        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(extension, srcDirs, userCodeClassLoader);
         getLogger().info("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
 
         ApiDocGenerator generator = new ApiDocGenerator(config, userCodeClassLoader);

@@ -28,8 +28,6 @@ public class BaseTest {
         System.out.println("--- --- ---   --- --- ---   --- --- ---");
     }
 
-
-
     protected ApiDocParseConfig buildConfigForController() {
         ApiDocParseConfig config = buildConfig();
         config.setJavaFileDirs(Collections.singletonList(srcDir + "/com/example/biz/controller"));
@@ -43,10 +41,9 @@ public class BaseTest {
     }
 
     private ApiDocParseConfig buildConfig() {
-        ApiDocParseConfig config = new ApiDocParseConfig();
+        ApiDocParseConfig config = ApiDocParseConfig.fromAutoDetect();
         config.setBasePackages(basePackages);
         config.setSrcDirs(Collections.singletonList(srcDir));
-        config.setAutoDetect(true);
         return config;
     }
 }

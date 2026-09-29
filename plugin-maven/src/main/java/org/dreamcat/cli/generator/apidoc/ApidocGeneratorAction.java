@@ -38,7 +38,7 @@ public class ApidocGeneratorAction implements Runnable {
                 project, mojo.getLocalRepository());
         logDebug("userCodeClassLoader urls: {}", Arrays.toString(userCodeClassLoader.getURLs()));
 
-        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, project, log);
+        ApiDocParseConfig config = ApiDocGeneratorUtil.buildApiDocConfig(mojo, userCodeClassLoader, project, log);
         logDebug("generate with config:\n{}", JsonUtil.toJsonWithPretty(config));
 
         ApiDocGenerator generator = new ApiDocGenerator(config, userCodeClassLoader);

@@ -13,7 +13,7 @@ import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.RendererPlugin;
 import org.dreamcat.cli.generator.apidoc.ApidocGeneratorMojo.Swagger;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.HttpPushConfig;
-import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.JsonWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.dreamcat.common.json.JsonUtil;
@@ -57,7 +57,7 @@ public class ApiDocGeneratorUtil {
     }
 
     public static ApiDocParseConfig buildApiDocConfig(
-            ApidocGeneratorMojo mojo, MavenProject project, Log log)
+            ApidocGeneratorMojo mojo, ClassLoader userCodeClassLoader, MavenProject project, Log log)
             throws IOException {
         String srcDir = MavenUtil.getSrcDir(project);
         if (mojo.getVerbose()) {
@@ -87,8 +87,6 @@ public class ApiDocGeneratorUtil {
         if (mojo.getMergeInputParam()) {
             config.setMergeInputParam(MergeInputParam.flatType());
         }
-
-        config.setAutoDetect(mojo.getAutoDetect());
 
         List<ServiceDoc> serviceDocs = orEmpty(mojo.getServiceDocList()).stream().map(it -> {
             ServiceDoc doc = new ServiceDoc();
@@ -120,6 +118,10 @@ public class ApiDocGeneratorUtil {
             return doc.getName() != null ? doc : null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFieldDoc(fieldDocs);
+
+        if (Objects.equals(mojo.getAutoDetect(), true)) {
+            config.mergeAnnotationConfig(ApiDocParseConfig.fromAutoDetect(userCodeClassLoader));
+        }
         return config;
     }
 
@@ -134,11 +136,11 @@ public class ApiDocGeneratorUtil {
         if (lang == null && jwc.getI18n()) {
             lang = System.getenv("LANG");
         }
-        JsnoWithCommentRenderer renderer;
+        JsonWithCommentRenderer renderer;
         if (lang != null) {
-            renderer = JsnoWithCommentRenderer.fromI18n(lang);
+            renderer = JsonWithCommentRenderer.fromI18n(lang);
         } else {
-            renderer = new JsnoWithCommentRenderer();
+            renderer = new JsonWithCommentRenderer();
         }
 
         setIf(renderer::setFieldsNoRequired, jwc.getFieldsNoRequired());

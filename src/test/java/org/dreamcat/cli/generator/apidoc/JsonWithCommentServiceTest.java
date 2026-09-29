@@ -2,7 +2,7 @@ package org.dreamcat.cli.generator.apidoc;
 
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.FieldDoc;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
-import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.JsonWithCommentRenderer;
 import org.dreamcat.common.util.SetUtil;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ class JsonWithCommentServiceTest extends BaseTest {
                 "com.example.base.ApiContext"
         ));
 
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
         generate(config, renderer);
     }
 
@@ -34,7 +34,7 @@ class JsonWithCommentServiceTest extends BaseTest {
                 "com.example.base.ApiContext"
         ));
 
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
         renderer.setSeqPrefix("5.1.");
         renderer.setInputParamTitle("- ##### Some Input Params");
         renderer.setOutputParamTitle(null);
@@ -44,7 +44,7 @@ class JsonWithCommentServiceTest extends BaseTest {
     @Test
     void test3() throws Exception {
         ApiDocParseConfig config = buildConfigForService();
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
         generate(config, renderer);
     }
 
@@ -53,7 +53,7 @@ class JsonWithCommentServiceTest extends BaseTest {
         ApiDocParseConfig config = buildConfigForService();
         config.setMergeInputParam(MergeInputParam.flatType());
 
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
         generate(config, renderer);
     }
 
@@ -64,7 +64,7 @@ class JsonWithCommentServiceTest extends BaseTest {
                 new FieldDoc().setName("com.fasterxml.jackson.annotation.JsonProperty"),
                 new FieldDoc().setName("com.example.annotation.FieldDoc")));
 
-        JsnoWithCommentRenderer renderer = new JsnoWithCommentRenderer();
+        JsonWithCommentRenderer renderer = new JsonWithCommentRenderer();
         generate(config, renderer);
     }
 }

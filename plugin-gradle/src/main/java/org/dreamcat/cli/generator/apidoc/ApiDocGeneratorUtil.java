@@ -10,7 +10,7 @@ import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.MergeInputParam;
 import org.dreamcat.cli.generator.apidoc.ApiDocParseConfig.ServiceDoc;
 import org.dreamcat.cli.generator.apidoc.renderer.ApiDocRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.HttpPushConfig;
-import org.dreamcat.cli.generator.apidoc.renderer.JsnoWithCommentRenderer;
+import org.dreamcat.cli.generator.apidoc.renderer.JsonWithCommentRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.TextTemplateRenderer;
 import org.dreamcat.cli.generator.apidoc.renderer.swagger.SwaggerRenderer;
 import org.dreamcat.common.Pair;
@@ -39,7 +39,9 @@ public class ApiDocGeneratorUtil {
     private ApiDocGeneratorUtil() {
     }
 
-    public static ApiDocParseConfig buildApiDocConfig(ApiDocGeneratorExtension extension, List<String> srcDirs) {
+    public static ApiDocParseConfig buildApiDocConfig(
+            ApiDocGeneratorExtension extension,
+            List<String> srcDirs, ClassLoader userCodeClassLoader) {
         ApiDocParseConfig config;
         String extraConfigJson = extension.getExtraConfigJson().getOrNull();
         if (extraConfigJson != null) {
@@ -61,8 +63,6 @@ public class ApiDocGeneratorUtil {
         if (extension.getMergeInputParam().getOrElse(false)) {
             config.setMergeInputParam(MergeInputParam.flatType());
         }
-
-        config.setAutoDetect(extension.getAutoDetect().get());
 
         List<ServiceDoc> serviceDocs = extension.getServiceDoc().getAsMap().values().stream().map(it -> {
             ServiceDoc doc = new ServiceDoc();
@@ -94,6 +94,10 @@ public class ApiDocGeneratorUtil {
             return doc.getName() != null ? doc : null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
         if (!functionDocs.isEmpty()) config.setFieldDoc(fieldDocs);
+
+        if (extension.getAutoDetect().get()) {
+            config.mergeAnnotationConfig(ApiDocParseConfig.fromAutoDetect(userCodeClassLoader));
+        }
         return config;
     }
 
@@ -109,11 +113,11 @@ public class ApiDocGeneratorUtil {
         if (lang == null && text.getI18n().getOrElse(false)) {
             lang = System.getenv("LANG");
         }
-        JsnoWithCommentRenderer renderer;
+        JsonWithCommentRenderer renderer;
         if (lang != null) {
-            renderer = JsnoWithCommentRenderer.fromI18n(lang);
+            renderer = JsonWithCommentRenderer.fromI18n(lang);
         } else {
-            renderer = new JsnoWithCommentRenderer();
+            renderer = new JsonWithCommentRenderer();
         }
         setIf(renderer::setFieldsNoRequired, text.getFieldsNoRequired());
         setIf(renderer::setOutputParamAsIndentedTable, text.getOutputParamAsIndentedTable());

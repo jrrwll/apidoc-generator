@@ -17,6 +17,7 @@ import org.dreamcat.common.reflect.ObjectMethod;
 import org.dreamcat.common.reflect.ObjectParameter;
 import org.dreamcat.common.reflect.ObjectRandomGenerator;
 import org.dreamcat.common.reflect.ObjectType;
+import org.dreamcat.common.util.ObjectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -84,7 +85,9 @@ class ApiParamParser extends BaseParser {
         apiParam.setJsonWithComment(toJSONWithComment(type));
         apiParam.setFields(apiParamFieldParser.resolveParamField(type));
 
-        parseFieldDoc(objectParameter.getParameter(), apiParam);
+        if (ObjectUtil.isNotEmpty(config.getFieldDoc())) {
+            parseFieldDoc(objectParameter.getParameter(), apiParam);
+        }
         // http/validation has high priority
         apiParam.setRequired(parseParameterRequired(objectParameter.getParameter()));
         if (config.getHttp() != null) {

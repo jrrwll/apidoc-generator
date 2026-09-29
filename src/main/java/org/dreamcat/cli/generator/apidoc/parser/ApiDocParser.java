@@ -61,7 +61,7 @@ public class ApiDocParser extends BaseParser {
     public ApiDocParser(ApiDocParseConfig config, ClassLoader classLoader,
             ObjectRandomGenerator randomGenerator) {
         super(config, classLoader);
-        this.config.afterPropertySet(classLoader);
+        this.config.validate();
         this.commentJavaParser = new CommentJavaParser(config);
         this.apiParamParser = new ApiParamParser(this, randomGenerator);
     }
